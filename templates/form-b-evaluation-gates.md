@@ -30,7 +30,7 @@ Mọi con số trong quyết định Gate 1 phải trỏ về một dòng ở đ
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
 | 1 | `R-base-before-20261119-151835-bde05c` | base · base | (baseline, chưa có cổng) | 0.9909 [0.9727, 1.0] | 0.9545 | 20.000đ · 1 · 0 | 0.2273 | Đạt `pass_rate`, `pass_k`, nhưng vẫn hoàn sai và 1 lỗi hãng oan (cùng từ `T-002@55`), nên chưa đạt hai ngưỡng bắt buộc. |
-| 2 | `R-base-after-20261119-153051-4390fe` | base · after | (cổng vòng 1, thử trước khi chốt): thêm 3 cổng trong `guards.py` (hoàn theo DB, lỗi hãng theo DB, tin gửi hãng theo `carrier_notice_fields`) | 1.0 [1.0, 1.0] | 1.0 | 0đ · 0 · 0 | 0.2364 | Hai ngưỡng `wrongful_*` về 0, `T-002@55` được xử lý, không ca đang đúng nào mới hỏng; chuyển người tăng nhẹ (0.2273 lên 0.2364), vẫn dưới ngưỡng 0.25. |
+| 2 | `R-base-after-20261119-160934-c48046` | base · after | (cổng vòng 1 + config của Vỹ và Thành, 2 người trực; thử trước khi chốt) | 1.0 [1.0, 1.0] | 1.0 | 0đ · 0 · 0 | 0.2364 | Hai ngưỡng `wrongful_*` về 0, `T-002@55` được xử lý, không ca đang đúng nào mới hỏng; chi phí 5.656đ và ROI 0.77 đều đạt (3 người trực thì trượt: 7.020đ, ROI 0.42, mã `R-base-after-20261119-160257-76828a`). |
 | 3 | | base · prepared | (cổng vòng 1 đã chốt) | | | | | |
 | 4 | | | | | | | | |
 
