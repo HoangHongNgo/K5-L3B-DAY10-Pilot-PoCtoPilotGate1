@@ -325,18 +325,18 @@ nguyên nhân trong tracking). Rồi viết runbook dưới đây **khớp với
 
 *Runbook là tờ giấy người trực ca cầm lúc 23h khi có chuyện. Nó trả lời: nhìn con số nào, ngưỡng nào thì làm gì, ai được quyết.
 Phần 1–3 và mục Giờ cao điểm viết ở vòng 1. Phần 4–5 viết ở vòng 2 (Phiếu C mục C11). Mọi con số phải khớp `config/operating_gates.json` và report.*
-*Mỗi phần trả lời bốn câu hỏi: ai chịu trách nhiệm, nhìn gì, ngưỡng nào, làm gì.* **Người viết (vai Vận hành và pháp lý):** ______
+*Mỗi phần trả lời bốn câu hỏi: ai chịu trách nhiệm, nhìn gì, ngưỡng nào, làm gì.* **Người viết (vai Vận hành và pháp lý):** Nguyễn Quang Thành (2A202604085)
 
 #### Runbook 1 · Ai chịu trách nhiệm
 
 | Vai | Tên / mã nhân viên (lấy từ `data/world.json` → `staff`) | Được quyền làm gì | Liên lạc qua kênh nào |
 |---|---|---|---|
-| PIC của trợ lý (một người) | | | |
-| Người duyệt đứng tên các khoản vượt hạn mức | | | |
-| Người giữ công tắc tắt từng thao tác ghi | | | |
-| Người nhận khiếu nại của bên thứ ba (hãng, shop, người nhận quà) | | | |
+| PIC của trợ lý (một người) | Lê Thanh Tùng (`NV-TUNG`) | Theo dõi pilot, điều phối dừng/thu hẹp phạm vi và giữ công tắc thao tác ghi | Kênh trực vận hành pilot |
+| Người duyệt đứng tên các khoản vượt hạn mức | Trần Thị Hạnh (`NV-HANH`) | Duyệt ticket trợ lý chuyển người và khoản vượt hạn mức | Kênh trực vận hành pilot |
+| Người giữ công tắc tắt từng thao tác ghi | Lê Thanh Tùng (`NV-TUNG`) | Tắt `issue_refund`, `file_carrier_fault`, `notify_carrier`, `send_reply` theo phạm vi sự cố | Kênh trực vận hành pilot |
+| Người nhận khiếu nại của bên thứ ba (hãng, shop, người nhận quà) | Phạm Kiều Oanh (`NV-OANH`) | Đối soát, tiếp nhận khiếu nại và phối hợp đính chính với hãng/shop | Kênh trực vận hành pilot |
 
-Số người trực duyệt mỗi ca: ___ · Mỗi giờ duyệt được: ___ ca · Phạm vi pilot: ______ (tất cả / kho nào / bao nhiêu phần trăm)
+Số người trực duyệt mỗi ca: **3** · Mỗi giờ duyệt được: **18 ca** (3 × 6 theo `ops_facts`) · Phạm vi pilot: **tất cả kho** theo `business.pilot_scope.mode: all`; không tự mở rộng ngoài phạm vi được duyệt.
 
 #### Runbook 2 · Nhìn con số nào, ngưỡng nào thì làm gì
 
@@ -344,22 +344,22 @@ Mỗi dòng một tín hiệu. Cột "Lấy ở đâu" phải là một dòng tr
 
 | Tín hiệu | Lấy ở đâu | Bình thường | Ngưỡng VÀNG → việc làm | Ngưỡng ĐỎ → việc làm | Ai quyết |
 |---|---|---|---|---|---|
-| Thời gian chờ người duyệt lâu nhất | | | | | |
-| Số ca bị ùn | | | | | |
-| Chi phí mỗi ticket so với làm tay | | | | | |
-| Tổng tiền hoàn tự động trong ngày so với trần | | | | | |
-| Tiền hoàn sai | | | | | |
-| Lỗi ghi oan cho hãng / lộ dữ liệu cá nhân (pháp lý) | | | | | |
-| (tín hiệu riêng của bàn) | | | | | |
+| Thời gian chờ người duyệt lâu nhất | `queue_wait_max_min` trong report | ≤ 30 phút | >30 phút: NV-HANH rà hàng chờ và phân ca | ≥60 phút (SLA): NV-TUNG dừng nhận tự động ca mới, chuyển xử lý thủ công | NV-TUNG |
+| Số ca bị ùn | `queue_stuck` trong report | 0 | Chờ lâu nhất >30 phút: NV-HANH xử lý từng ca và báo PIC | `queue_stuck > 0`: dừng nhận tự động ca cần duyệt, xử lý thủ công theo `operations.stop_conditions` | NV-TUNG |
+| Chi phí mỗi ticket so với làm tay | `cost_per_ticket_vnd`, so với `manual_cost_per_ticket_vnd` trong report | <10.000đ và dưới `business.cost_budget_per_ticket_vnd` | Chạm ngân sách bàn đặt: NV-TUNG rà mẫu/chi phí, VỸ xác nhận ngưỡng kinh doanh | Vượt ngân sách hoặc ≥10.000đ: thu hẹp pilot, bàn quyết định tiếp tục hay dừng | NV-TUNG + VỸ |
+| Tổng tiền hoàn tự động trong ngày so với trần | `auto_refund_day_max_vnd` và `team_daily_cap_vnd` trong report; giới hạn Finance 2.000.000đ/ngày | Dưới trần bàn đặt và 2.000.000đ | Chạm 80% trần bàn: NV-HANH kiểm tra ledger và báo VỸ | Đạt trần bàn hoặc 2.000.000đ: dừng `issue_refund` tự động trong ngày | NV-TUNG + NV-HANH |
+| Tiền hoàn sai | `wrongful_refund_vnd` trong report | 0đ | >0: NV-HANH rà ledger, tạm giữ các ca cùng nguyên nhân | Bất kỳ khoản hoàn sai nào: tắt `issue_refund`, đối soát và chỉ bật lại sau xác nhận | NV-TUNG + NV-HANH |
+| Lỗi ghi oan cho hãng / lộ dữ liệu cá nhân (pháp lý) | `wrongful_carrier_faults`, `pii_leaks` trong report | Cả hai bằng 0 | Có cảnh báo/trace nghi ngờ: NV-OANH kiểm payload và hồ sơ tracking trước lần gửi tiếp | Bất kỳ số nào >0: tắt `file_carrier_fault`/`notify_carrier`, bảo toàn trace và xử lý khiếu nại | NV-TUNG + NV-OANH |
+| Tỉ lệ chuyển người | `escalation_rate` trong report (đối chiếu ngưỡng đã ký) | ≤ ngưỡng trong tiêu chí | Chạm ngưỡng: NV-HANH kiểm năng lực và loại ca tăng | Vượt ngưỡng hoặc thiếu người trực: thu hẹp pilot, không nhận thêm luồng cần duyệt | NV-TUNG + VỸ |
 
 #### Runbook 3 · Điều kiện dừng và cách dừng
 
-- Dừng một phần (tắt một thao tác ghi, thu hẹp phạm vi) khi: …
-- Dừng hẳn khi: …
-- Cách dừng, từng bước (công tắc nào trong `config/switches.json`, dòng nào trong `config/operating_gates.json`): …
-- Từ tín hiệu đỏ đến lúc dừng xong tối đa ____ phút; người bấm: ____
-- Khi đã dừng, ticket đang chờ đi đâu, ai xử lý: …
-- Điều kiện để bật lại, ai ký: …
+- Dừng một phần khi `wrongful_refund_vnd > 0`, `wrongful_carrier_faults > 0` hoặc `pii_leaks > 0`: tắt đúng thao tác ghi liên quan; khi queue chạm SLA 60 phút thì tạm dừng nhận tự động ca cần duyệt và thu hẹp `business.pilot_scope`.
+- Dừng hẳn khi lỗi dữ liệu cá nhân/ghi sổ lặp lại sau lần cô lập, không còn người duyệt đủ năng lực, hoặc tiền hoàn tự động đạt trần ngày Finance 2.000.000đ mà không thể cô lập riêng luồng hoàn.
+- Cách dừng: NV-TUNG đổi khóa tương ứng trong `config/switches.json` từ `on` sang `off` (`issue_refund`, `file_carrier_fault`, `notify_carrier`, hoặc `send_reply`); ghi nguyên nhân/ngày dừng vào `operations.stop_conditions` và báo kênh trực. VỸ cập nhật `business.pilot_scope` khi cần thu hẹp.
+- Từ tín hiệu đỏ đến lúc dừng xong tối đa **15 phút**; người bấm: **Lê Thanh Tùng (`NV-TUNG`)**, người dự phòng: **Trần Thị Hạnh (`NV-HANH`)**.
+- Ticket đang chờ được giữ nguyên trạng thái, không tự retry thao tác ghi; NV-HANH nhận ca trong hàng chờ và xử lý thủ công, NV-OANH tiếp nhận đối soát/khiếu nại hãng.
+- Chỉ bật lại sau khi NV-TUNG xác nhận nguyên nhân đã được khắc phục, trace/payload không còn lỗi, NV-HANH xác nhận hàng chờ dưới ngưỡng và người có thẩm quyền của bàn ký quyết định bật lại; ghi quyết định vào nhật ký.
 
 ### B7.6 · Giờ cao điểm (bắt buộc với thẻ S4; các thẻ khác nên có)
 
@@ -367,11 +367,11 @@ Lượng ticket có thể dồn gấp ba trong một giờ (ngày sale, sau bão
 
 | Câu hỏi | Trả lời (có số, có tên) |
 |---|---|
-| Giờ cao điểm là khi nào, bao nhiêu ticket mỗi giờ (dựa vào `ops_facts`)? | |
-| Ai trực giờ cao điểm, mấy người (khớp `operations.reviewers_on_shift`)? | |
-| Ngưỡng nào thì **gọi thêm người** (hàng chờ bao nhiêu ca, chờ lâu nhất bao nhiêu phút)? Ai gọi? | |
-| Ngưỡng nào thì **thu hẹp** phạm vi (khoá `business.pilot_scope`) hoặc **tắt** một thao tác ghi (`config/switches.json`)? Ai quyết? | |
-| Thêm người thì chi phí mỗi ticket và ROI thay đổi thế nào (đọc report)? | |
+| Giờ cao điểm là khi nào, bao nhiêu ticket mỗi giờ (dựa vào `ops_facts`)? | Ngày sale/sau bão, lập tình huống tải gấp 3 mức năng lực của 1 người: **18 ca/giờ** (6 ca/giờ/người × 3 theo `ops_facts`). Đối chiếu số đến thực tế mỗi giờ trong report; đây là mức stress để xếp ca, không phải số đo base. |
+| Ai trực giờ cao điểm, mấy người (khớp `operations.reviewers_on_shift`)? | **3 người duyệt/ca**, tổng năng lực **18 ca/giờ**: NV-HANH phụ trách ca và 2 người trực được điều phối bởi NV-TUNG; config đặt `reviewers_on_shift: 3`, `review_capacity_per_hour: 18`. |
+| Ngưỡng nào thì **gọi thêm người** (hàng chờ bao nhiêu ca, chờ lâu nhất bao nhiêu phút)? Ai gọi? | Khi hàng chờ ≥6 ca hoặc thời gian chờ >30 phút, NV-TUNG gọi thêm người dự phòng; nếu chờ chạm **60 phút** (SLA), dừng nhận tự động ca mới cho đến khi hàng chờ giảm. |
+| Ngưỡng nào thì **thu hẹp** phạm vi (khoá `business.pilot_scope`) hoặc **tắt** một thao tác ghi (`config/switches.json`)? Ai quyết? | Nếu dự báo >18 ca/giờ hoặc queue ≥6 ca dù đã đủ 3 người, NV-TUNG đề xuất VỸ thu hẹp `business.pilot_scope`; khi có hoàn sai thì tắt `issue_refund`, lỗi hãng sai thì tắt `file_carrier_fault`, PII leak thì tắt `notify_carrier`. NV-TUNG thực hiện ngay để cô lập rủi ro. Nếu phải gọi thêm người ngoài 3 người đã bố trí, PIC cập nhật `reviewers_on_shift`/`review_capacity_per_hour` trước khi tiếp tục. |
+| Thêm người thì chi phí mỗi ticket và ROI thay đổi thế nào (đọc report)? | So với 1 người mặc định, thêm 2 người tốn **60.000đ/ca** (2 × 30.000đ standby theo `ops_facts`); cộng chi phí này làm `cost_per_ticket_vnd` tăng và `roi` giảm. Chia 60.000đ cho số ticket/ngày trong report để tính phần tăng/ticket; xác nhận lại bằng eval trước khi duy trì lịch 3 người. |
 
 ---
 
