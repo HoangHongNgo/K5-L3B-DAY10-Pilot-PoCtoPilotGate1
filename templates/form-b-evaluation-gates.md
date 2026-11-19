@@ -30,7 +30,7 @@ Mọi con số trong quyết định Gate 1 phải trỏ về một dòng ở đ
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
 | 1 | `R-base-before-20261119-151835-bde05c` | base · base | (baseline, chưa có cổng) | 0.9909 [0.9727, 1.0] | 0.9545 | 20.000đ · 1 · 0 | 0.2273 | Đạt `pass_rate`, `pass_k`, nhưng vẫn hoàn sai và 1 lỗi hãng oan (cùng từ `T-002@55`), nên chưa đạt hai ngưỡng bắt buộc. |
-| 2 | | base · after | (cổng vòng 1, thử trước khi chốt) | | | | | |
+| 2 | `R-base-after-20261119-153051-4390fe` | base · after | (cổng vòng 1, thử trước khi chốt): thêm 3 cổng trong `guards.py` (hoàn theo DB, lỗi hãng theo DB, tin gửi hãng theo `carrier_notice_fields`) | 1.0 [1.0, 1.0] | 1.0 | 0đ · 0 · 0 | 0.2364 | Hai ngưỡng `wrongful_*` về 0, `T-002@55` được xử lý, không ca đang đúng nào mới hỏng; chuyển người tăng nhẹ (0.2273 lên 0.2364), vẫn dưới ngưỡng 0.25. |
 | 3 | | base · prepared | (cổng vòng 1 đã chốt) | | | | | |
 | 4 | | | | | | | | |
 
@@ -279,9 +279,9 @@ python3 -m unittest discover -s tests
 
 | # | Cổng (hàm và nhánh, ví dụ `write_gate` khi `tool == "issue_refund"`) | Ứng với dòng nào ở B6 / B4 | Chặn điều gì, dựa vào nguồn sự thật nào | Mã lần chạy `base · after` | Ca đang đúng nào bị hỏng? (phải là "không") |
 |---|---|---|---|---|---|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
+| 1 | `write_gate`, nhánh `tool == "issue_refund"` và chưa có `approval_id`: tính quyền lợi bằng `entitlement_vnd` từ chính sách, số ngày trễ và nguyên nhân trong DB; hoàn vượt quyền lợi thì `escalate` | B6 dòng Kỹ thuật (tin lời khách hơn tracking); B2 lỗi 1 | Chặn hoàn tiền vượt quyền lợi theo DB. Nguồn sự thật: `lookup_order`, `lookup_policies`, `db_delay_days`. Ca hợp lệ (ví dụ hoàn 90.000đ cho `O-1003` trễ 8 ngày) vẫn tự động. | `R-base-after-20261119-153051-4390fe` | Không |
+| 2 | `write_gate`, nhánh `tool == "file_carrier_fault"`: chỉ ghi khi `carrier_at_fault` xác nhận (đủ số ngày và nguyên nhân hợp lệ), ngược lại `deny`; số ngày khác DB thì `modify` theo DB | B6 dòng Kỹ thuật; B2 lỗi 2 | Chặn ghi lỗi oan cho hãng và tài xế. Nguồn sự thật: tracking (`delay_cause`, ngày giao) và `fault_causes` trong chính sách. | `R-base-after-20261119-153051-4390fe` | Không |
+| 3 | `write_gate`, nhánh `tool == "notify_carrier"`: chỉ giữ các trường trong `carrier_notice_fields` của chính sách, trừ trường bị chặn trong `legal.pii_fields_blocked_to_third_party`; `modify` payload | B6 dòng Pháp lý (SĐT người nhận quà bị gửi hãng); B4 | Chặn dữ liệu cá nhân (`customer_note`, SĐT, địa chỉ) gửi cho hãng. Nguồn sự thật: `policies[].carrier_notice_fields`. | `R-base-after-20261119-153051-4390fe` | Không |
 
 ### B7.2 · Câu 2.7 · Hai bước tránh rò rỉ dữ liệu
 
