@@ -31,7 +31,7 @@ Mọi con số trong quyết định Gate 1 phải trỏ về một dòng ở đ
 |---|---|---|---|---|---|---|---|---|
 | 1 | `R-base-before-20261119-151835-bde05c` | base · base | (baseline, chưa có cổng) | 0.9909 [0.9727, 1.0] | 0.9545 | 20.000đ · 1 · 0 | 0.2273 | Đạt `pass_rate`, `pass_k`, nhưng vẫn hoàn sai và 1 lỗi hãng oan (cùng từ `T-002@55`), nên chưa đạt hai ngưỡng bắt buộc. |
 | 2 | `R-base-after-20261119-160934-c48046` | base · after | (cổng vòng 1 + config của Vỹ và Thành, 2 người trực; thử trước khi chốt) | 1.0 [1.0, 1.0] | 1.0 | 0đ · 0 · 0 | 0.2364 | Hai ngưỡng `wrongful_*` về 0, `T-002@55` được xử lý, không ca đang đúng nào mới hỏng; chi phí 5.656đ và ROI 0.77 đều đạt (3 người trực thì trượt: 7.020đ, ROI 0.42, mã `R-base-after-20261119-160257-76828a`). |
-| 3 | | base · prepared | (cổng vòng 1 đã chốt) | | | | | |
+| 3 | `R-base-prepared-20261119-161127-c48046` | base · prepared | (cổng vòng 1 đã chốt bằng `lab10.checkpoint`, hash `60b8f2a6`) | 1.0 [1.0, 1.0] | 1.0 | 0đ · 0 · 0 | 0.2364 | Cùng kết quả với lần `after` cuối; mọi ngưỡng đã ký đều `[ĐẠT]`, không có dòng vượt trần. |
 | 4 | | | | | | | | |
 
 ---
