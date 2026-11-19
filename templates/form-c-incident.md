@@ -273,7 +273,7 @@ Vì sao có thể sai: khách chưa thấy trả lời thì nhắn lại, đổi
 
 <a id="c6"></a>
 
-## C6 · Câu 3.4 · Fault tree TRƯỚC khi sửa (mã lần chạy: `__________`)
+## C6 · Câu 3.4 · Fault tree TRƯỚC khi sửa (mã lần chạy: `R-S5-prepared-20261119-161957-c48046`, base `R-S5-before-20261119-161957-c48046`)
 
 **Khung tư duy.** Đi từ **tác hại** ngược về nguyên nhân, không đi từ lỗi mình tình cờ thấy. Mỗi tầng hỏi "điều gì phải xảy
 ra thì điều trên mới xảy ra", nối bằng **HOẶC** (một trong các nhánh là đủ) hoặc **VÀ** (phải đồng thời). Một biện pháp tốt
@@ -288,21 +288,34 @@ thường biến một nhánh HOẶC thành VÀ: tác hại chỉ còn xảy ra 
 Ít nhất hai nhánh ở hai tầng khác nhau (kỹ thuật, kinh doanh, con người); mỗi lá có bằng chứng (ticket@seed, trường dữ liệu, hoặc một dòng của report).
 
 ```
-[ĐỈNH] Tác hại: ______________________________ (cho ai: __________, đo bằng: __________)
+[ĐỈNH] Tác hại: pilot lỗ và có tiền mất thật, Finance không ký được
+        (cho ai: Finance và hãng vận chuyển, đo bằng: ROI -0.46, hoàn sai 178.000đ, 20 lỗi hãng oan, kho HCM-B2B 10.382đ/ticket > làm tay 10.000đ)
  └─ HOẶC
- ├─ [1] ______________________________ tầng: đầu vào / data / hành động / quyền hạn / vận hành / kinh doanh
- │ └─ vì: ________________________ bằng chứng: ticket ______@seed ____
- ├─ [2] ______________________________ tầng: ______
- │ └─ vì: ________________________ bằng chứng: ticket ______@seed ____
- └─ [3] ______________________________ tầng: ______
- └─ vì: ________________________ bằng chứng: ______
+ ├─ [1] Hoàn lần hai cho đơn đã được hoàn            tầng: hành động và data
+ │   └─ vì: quyết định hoàn chỉ nhìn tracking và chính sách, không nhìn sổ cái
+ │          bằng chứng: S5-02@11 (O-2501 hoàn 25.000đ hai lần, ghi lỗi hãng GHSH hai lần), S5-20@11 (O-2520 đã
+ │          có dòng CSKH hoàn tay `T-CSKH-2520`, trợ lý hoàn thêm 20.000đ), S5-03@11 (đơn O-2501 bị hoàn lần thứ ba, nhãn `denied`)
+ ├─ [2] CSKH hoàn tay và trợ lý cùng ghi sổ, không bên nào biết bên kia   tầng: con người và vận hành
+ │   └─ vì: không có quy ước "đơn đã hoàn tay thì trợ lý không xử lý" và không kênh báo hai bên
+ │          bằng chứng: `ledger_seed` (basis `manual`: O-2520, O-2521); S5-20@11, S5-21@11 (đã nhận 10.000đ hoàn một phần)
+ ├─ [3] Kho sỉ HCM-B2B: trợ lý đọc xong vẫn phải chuyển người      tầng: kinh doanh
+ │   └─ vì: đơn sỉ vượt hạn mức tự động nên luôn `escalated`; Finance trả tiền LLM cộng công duyệt (10.000đ)
+ │          bằng chứng: S5-51@11 (`escalated` sau `proposal` 230.000đ, cost 565đ); report prepared: kho HCM-B2B 60 trial, 10.382đ/ticket
+ └─ [4] Ticket dán dài khiến tiền LLM vượt trần               tầng: đầu vào và kinh doanh
+     └─ vì: giá extract tính theo ký tự, ticket dán cả lịch sử trao đổi dài khoảng 5.200 đến 5.500 ký tự
+            bằng chứng: S5-50@11 (1.856đ > trần 1.500đ, base), S5-70@11 (2.018đ, ticket lẻ nhưng nội dung dài)
 ```
+
+Ghi chú về cây: nhánh [1] và [2] cùng dẫn tới 178.000đ hoàn sai và 20 lỗi hãng oan; nhánh [3] và [4] dẫn tới ROI âm. Nhánh [1] và [4]
+đều bắt đầu từ dữ liệu vào của trợ lý (sổ cái, độ dài chữ); nhánh [2] và [3] **không nằm ở model**: một nhánh là quy trình giữa hai
+đội, một nhánh là phạm vi pilot.
 
 | Lá | Specification bị vi phạm (phần mềm phải làm gì) | Giả định môi trường đã sai (thế giới ngoài phần mềm) |
 |---|---|---|
-| [1] | | |
-| [2] | | |
-| [3] | | |
+| [1] | Tổng tiền hoàn cho một đơn (trợ lý và CSKH cộng lại) không vượt quyền lợi tính từ tracking và chính sách; mỗi bưu kiện chỉ ghi lỗi hãng một lần | "Mỗi đơn chỉ được hoàn một lần" và "khách nhắn lại là ticket mới chưa từng được xử lý" |
+| [2] | Trợ lý đọc sổ cái chung trước mọi lệnh hoàn và không hoàn thêm khi CSKH đã hoàn | "CSKH và trợ lý không cùng xử lý một đơn", hoặc "CSKH sẽ báo trợ lý khi hoàn tay" |
+| [3] | Chi phí mỗi ticket (LLM cộng công duyệt) không vượt làm tay (10.000đ); ticket chắc chắn phải chuyển người không đi qua tự động hoá | "Trợ lý đáng triển khai cho mọi loại đơn, kể cả đơn sỉ vượt hạn mức" |
+| [4] | Tiền LLM cho một ticket không vượt `max_llm_cost_per_ticket_vnd` (1.500đ) | "Nội dung ticket ngắn" (khách không dán lịch sử trao đổi dài) |
 
 **Ví dụ mẫu một nhánh (bộ nền, đừng chép):** đỉnh "hãng VNX nhận lỗi oan cho đơn O-1002" ← [1] agent dùng độ trễ 5 ngày ←
 model lấy số trong ticket đè lên DB (`T-002@55`). Spec bị vi phạm: độ trễ dùng để ghi lỗi phải lấy từ tracking DB. Giả định
