@@ -338,9 +338,10 @@ python3 -m lab10.grade --incident Sx
 
 | Nhánh fault tree | Nguyên nhân | Chỗ sửa (hàm + nhánh trong `guards.py`, hoặc khoá trong `operating_gates.json`) | Tầng (phát hiện / chặn / giới hạn thiệt hại / vận hành) | GIẢM khả năng hay NGĂN hẳn? Vì sao | Mã lần chạy sau khi sửa |
 |---|---|---|---|---|---|
-| [1] | | | | | |
-| [2] | | | | | |
-| [3] | | | | | |
+| [1] Hoàn lần hai cho đơn đã hoàn | Quyết định hoàn chỉ nhìn tracking và chính sách, không tra sổ cái | `write_gate`, nhánh `tool == "issue_refund"`, cổng 4: cộng các khoản đã hoàn của đơn trong sổ cái (`ledger_rows(order_id=...)`), so với quyền lợi từ DB (`entitlement_vnd`); hết quyền lợi thì `escalate`, còn dư thì `modify` về phần còn lại | chặn | **NGĂN** nhánh này: cổng nằm trước lệnh ghi, không đọc chữ của khách, nên `S5-02`, `S5-03`, `S5-20` đều chuyển người và `S5-21` được hoàn đúng phần còn lại 12.000đ. Còn hở nếu sổ cái thiếu dòng (CSKH hoàn tay mà không ghi sổ) | S5: `R-S5-after-20261119-163707-d7270f` (pass_rate 1.0, hoàn sai 0, lỗi hãng oan 0); bộ nền: `R-base-after-20261119-163707-d7270f` (1.0, không ca mới hỏng) |
+| [2] CSKH hoàn tay và trợ lý cùng ghi sổ | Không có quy ước giữa hai đội | Phần mềm: cùng cổng 4 (đọc dòng `basis: manual` trong sổ cái chung). Quy trình: `operations.decision_note`, `operations.review_sampling_pct` (THÀNH đặt 10%) và quy ước CSKH báo trợ lý khi hoàn tay (runbook phần 4–5, C11) | giới hạn thiệt hại và vận hành | **GIẢM khả năng, chưa ngăn hẳn**: cổng chỉ thấy khoản hoàn đã ghi sổ; quy ước giữa hai đội là việc con người, không code nào ép được | Cổng: `R-S5-after-20261119-163707-d7270f`; chỉ số theo dõi: `R-S5-after-20261119-164412-c050a2` |
+
+*(Các nhánh [3] kho sỉ HCM-B2B và [4] tiền LLM vượt trần sửa ở `business.pilot_scope`, `business.cost_budget_per_ticket_vnd`; VỸ điền hai dòng này sau khi đổi config.)*
 
 ---
 
@@ -353,14 +354,16 @@ Thẻ S5 dùng mục này cho một con số kinh doanh: chi phí mỗi ticket t
 
 | | Chỉ số theo dõi mới của bàn |
 |---|---|
-| **Tên trong `MONITORS`** | |
-| **Bước / hành vi được đo** | |
-| **Thước đo** (một câu, có đơn vị) | |
-| **Dữ liệu** (trường nào của trial, không có nhãn) | |
-| **Cách tính** (công thức, mẫu số, cách xử lý ca thiếu dữ liệu) | |
-| **Khung thời gian / ngưỡng báo động** | |
-| **Điểm mù** (chỉ số này KHÔNG thấy gì) | |
-| Giá trị trên bộ nền · trên thẻ (đọc mục `monitor` của report) | |
+| **Tên trong `MONITORS`** | `duplicate_refund_rate` (kèm `worst_warehouse_escalation_rate`, xem ghi chú dưới bảng) |
+| **Bước / hành vi được đo** | `write_gate`, lệnh `issue_refund`: trợ lý định hoàn cho một đơn mà sổ cái đã có khoản hoàn (trợ lý hoặc CSKH hoàn tay) |
+| **Thước đo** (một câu, có đơn vị) | Tỉ lệ ticket (0 đến 1) mà cổng hoàn tích lũy phải can thiệp vì đơn đã có khoản hoàn. |
+| **Dữ liệu** (trường nào của trial, không có nhãn) | `events` của trial: sự kiện `type == "guard"` có `kind == "guard_cumulative_refund"` (ghi bởi `ctx.log` trong `guards.py`). Không dùng nhãn đúng/sai. |
+| **Cách tính** (công thức, mẫu số, cách xử lý ca thiếu dữ liệu) | Số ticket có sự kiện đó chia tổng số ticket trong khung thời gian (`max(1, tổng)` tránh chia 0). Trial không có `events` coi như không chạm cổng. |
+| **Khung thời gian / ngưỡng báo động** | Theo ngày vận hành. Ngưỡng đề xuất: **> 5% trong một ngày** thì NV-TUNG đối soát sổ với CSKH và NV-OANH (đối soát); bất kỳ ngày nào > 0 trong tuần đầu pilot đều ghi nhận để học quy trình. |
+| **Điểm mù** (chỉ số này KHÔNG thấy gì) | Chỉ thấy ca cổng bắt được: nếu cổng bị tắt hoặc sổ cái thiếu dòng (CSKH hoàn tay không ghi sổ) thì chỉ số vẫn bằng 0 dù đang hoàn trùng. Cũng không phân biệt hoàn trùng do khách nhắn lại và do CSKH hoàn tay. |
+| Giá trị trên bộ nền · trên thẻ (đọc mục `monitor` của report) | Bộ nền 0.0 (`R-base-after-20261119-164413-c050a2`) · thẻ S5 0.1667 (`R-S5-after-20261119-164412-c050a2`); `grade` ghi `sáng đèn: duplicate_refund_rate` (0.0 sang 0.167) |
+
+Ghi chú: `worst_warehouse_escalation_rate` (tỉ lệ chuyển người ở kho tệ nhất, chỉ tính kho từ 3 ticket) là chỉ số kinh doanh cho thước đo "chi phí theo kho", nhưng nó bằng 1.0 ở cả bộ nền lẫn thẻ nên chưa phân biệt được sự cố; bàn quyết định giữ hay sửa sau khi VỸ đổi `pilot_scope`.
 
 ---
 
