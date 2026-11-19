@@ -47,7 +47,17 @@ def _db_facts(ctx, action):
     return order, parcel, delay, policy
 
 
+# Cổng 5 (vòng 2, thẻ S5): giá đọc tính theo độ dài chữ. Khách dán kèm danh sách hàng dài hàng nghìn ký tự
+# thì tiền LLM vượt trần 1.500đ, hoặc cổng ngân sách đẩy ticket hợp lệ sang người duyệt. Chỉ đọc phần đầu.
+_MAX_READ_CHARS = 1200
+_KEEP_CHARS = 800
+
+
 def pre_guard(ctx):
+    text = ctx.ticket.get("text", "")
+    if len(text) > _MAX_READ_CHARS:
+        ctx.log("guard_long_ticket_trimmed", chars=len(text), kept=_KEEP_CHARS)
+        return Verdict.rewrite("rút gọn ticket quá dài, chỉ đọc phần đầu", text[:_KEEP_CHARS].rstrip())
     return Verdict.allow()
 
 

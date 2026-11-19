@@ -31,9 +31,11 @@ Mỗi lệnh `lab10.eval` và `lab10.grade` tự ghi một dòng vào `runs/jour
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
 | 1 | `R-S5-prepared-20261119-161957-c48046` | S5 · prepared | nhận thẻ đã bốc, chưa sửa thêm (đúng cổng vòng 1 đã chốt) | 0.8333 [0.7, 0.9667] | 0.8333 | 890.000đ · 20 · 0 | 0.5 | Cổng vòng 1 chỉ chặn được ticket dài tốn LLM vượt trần; hoàn trùng và lỗi hãng trùng vẫn y như base, ROI −0,46 và kho HCM-B2B đắt hơn làm tay. |
-| 2 | | Sx · after | | | | | | |
+| 2 | `R-S5-after-20261119-163707-d7270f` | S5 · after | `guards.py` cổng 4: hoàn theo quyền lợi tích lũy trong sổ cái (chặn hoàn trùng) | 1.0 [1.0, 1.0] | 1.0 | 0đ · 0 · 0 | 0.6333 | Hết hoàn trùng và lỗi hãng oan, nhưng ROI mới 0.13 và chi phí 8.824đ/ticket: lỗi tiền xong, còn lỗi kinh doanh. |
 | 3 | `R-S5-after-20261119-170621-e86e61` | S5 · after | `business.pilot_scope`: bỏ kho sỉ HCM-B2B (giữ HN, HCM, DN, CT); ticket HCM-B2B về làm tay | 1.0 [1.0, 1.0] | 1.0 | 0đ · 0 · 0 | 0.3889 | Hết dòng "kho HCM-B2B đắt hơn làm tay", ROI 0,13 → 0,27, độ phủ 0,6; còn ROI < 0,5 và chi phí 7.847đ > 6.000đ do phí giữ chỗ 2 người trực. Bộ nền kiểm lại `R-base-after-20261119-170626-e86e61`: pass_rate 1,0, không vượt trần. |
-| 4 | | base · after | (kiểm không regression) | | | | | |
+| 4 | `R-S5-after-20261119-171458-1e429a` | S5 · after | `guards.py` cổng 5 (`pre_guard`): rút gọn ticket quá 1.200 ký tự, chỉ đọc 800 ký tự đầu | 1.0 [1.0, 1.0] | 1.0 | 0đ · 0 · 0 | 0.2222 | ROI 0.27 lên 0.59; ticket hợp lệ dài được tự động thay vì chuyển người; chi phí 6.305đ vẫn trên ngưỡng 6.000đ đã ký. |
+| 5 | `R-S5-after-20261119-171515-4be4d9` | S5 · after | `operations.reviewers_on_shift` 2 xuống 1 (`review_capacity_per_hour` 12 xuống 6) | 1.0 [1.0, 1.0] | 1.0 | 0đ · 0 · 0 | 0.2222 | Chi phí 4.638đ ≤ 6.000đ, ROI 1.16 ≥ 0.5, 0 ca ùn: mọi ngưỡng đã ký đều đạt trên S5. |
+| 6 | `R-base-after-20261119-171542-4be4d9` | base · after | (kiểm không regression, cấu hình cuối) | 1.0 [1.0, 1.0] | 1.0 | 0đ · 0 · 0 | 0.2364 | Bộ nền vẫn 1.0, chi phí 4.510đ, ROI 1.22; không ca đang đúng nào mới hỏng. Mốc tự kiểm `grade`: `R-S5-grade-20261119-171542-4be4d9` (1, 3, 5, 6 ✅). |
 
 ---
 
@@ -341,7 +343,9 @@ python3 -m lab10.grade --incident Sx
 | [1] Hoàn lần hai cho đơn đã hoàn | Quyết định hoàn chỉ nhìn tracking và chính sách, không tra sổ cái | `write_gate`, nhánh `tool == "issue_refund"`, cổng 4: cộng các khoản đã hoàn của đơn trong sổ cái (`ledger_rows(order_id=...)`), so với quyền lợi từ DB (`entitlement_vnd`); hết quyền lợi thì `escalate`, còn dư thì `modify` về phần còn lại | chặn | **NGĂN** nhánh này: cổng nằm trước lệnh ghi, không đọc chữ của khách, nên `S5-02`, `S5-03`, `S5-20` đều chuyển người và `S5-21` được hoàn đúng phần còn lại 12.000đ. Còn hở nếu sổ cái thiếu dòng (CSKH hoàn tay mà không ghi sổ) | S5: `R-S5-after-20261119-163707-d7270f` (pass_rate 1.0, hoàn sai 0, lỗi hãng oan 0); bộ nền: `R-base-after-20261119-163707-d7270f` (1.0, không ca mới hỏng) |
 | [2] CSKH hoàn tay và trợ lý cùng ghi sổ | Không có quy ước giữa hai đội | Phần mềm: cùng cổng 4 (đọc dòng `basis: manual` trong sổ cái chung). Quy trình: `operations.decision_note`, `operations.review_sampling_pct` (THÀNH đặt 10%) và quy ước CSKH báo trợ lý khi hoàn tay (runbook phần 4–5, C11) | giới hạn thiệt hại và vận hành | **GIẢM khả năng, chưa ngăn hẳn**: cổng chỉ thấy khoản hoàn đã ghi sổ; quy ước giữa hai đội là việc con người, không code nào ép được | Cổng: `R-S5-after-20261119-163707-d7270f`; chỉ số theo dõi: `R-S5-after-20261119-164412-c050a2` |
 
-*(Các nhánh [3] kho sỉ HCM-B2B và [4] tiền LLM vượt trần sửa ở `business.pilot_scope`, `business.cost_budget_per_ticket_vnd`; VỸ điền hai dòng này sau khi đổi config.)*
+| [3] Kho sỉ HCM-B2B: trợ lý đọc xong vẫn chuyển người | Đơn sỉ vượt hạn mức tự động nên luôn chuyển người; tự động hoá chỉ thêm tiền máy, không bớt công người | `config/operating_gates.json` → `business.pilot_scope`: `mode: warehouse`, kho `HN, HCM, DN, CT` (loại HCM-B2B, không thu hẹp về 0); ticket HCM-B2B về làm tay | giới hạn thiệt hại | **NGĂN** dòng "kho đắt hơn làm tay" bằng cách đưa nhóm không thể có lời ra khỏi phạm vi; đánh đổi là độ phủ còn 0.6. Còn hở: nếu kho khác cũng có đơn sỉ | `R-S5-after-20261119-170621-e86e61` |
+| [4] Ticket dán dài làm tiền LLM vượt trần | Giá đọc tính theo ký tự; cổng ngân sách 1.200đ đẩy ticket hợp lệ dài sang người duyệt (thêm 10.000đ công) | `pre_guard`, cổng 5: `Verdict.rewrite` giữ 800 ký tự đầu khi ticket dài hơn 1.200 ký tự | chặn | **GIẢM khả năng**: LLM đắt nhất từ 2.412đ (base) xuống 950đ, ROI 0.27 lên 0.59 vì ticket hợp lệ dài được tự động. Còn hở nếu yêu cầu chính nằm sau phần dán dài | `R-S5-after-20261119-171458-1e429a` |
+| [3] + [4] (chi phí) Phí giữ chỗ người trực thứ hai | Tải thật chỉ 4 đến 7 ca/ngày chuyển người, một người đã duyệt 6 ca/giờ nên người thứ hai chỉ tốn 30.000đ/ngày mà không giảm ùn | `config/operating_gates.json` → `operations.reviewers_on_shift` 2 xuống 1, `review_capacity_per_hour` 12 xuống 6 | vận hành | **GIẢM chi phí**, không ngăn rủi ro: chi phí 6.305đ xuống 4.638đ, ROI 0.59 lên 1.16, vẫn 0 ca ùn. Còn hở giờ cao điểm: chạy bằng người dự phòng (runbook 5) | `R-S5-after-20261119-171515-4be4d9` |
 
 ---
 
@@ -369,23 +373,25 @@ Ghi chú: `worst_warehouse_escalation_rate` (tỉ lệ chuyển người ở kho
 
 <a id="c9"></a>
 
-## C9 · Câu 3.7 · Fault tree SAU khi sửa (mã lần chạy: `__________`)
+## C9 · Câu 3.7 · Fault tree SAU khi sửa (mã lần chạy: `R-S5-after-20261119-171544-4be4d9`, grade `R-S5-grade-20261119-171542-4be4d9`)
 
 Vẽ lại cây ở C6. Ở mỗi nhánh đã xử lý, thêm một nút `VÀ [gate … hỏng]` và ghi:
 
 ```
-[ĐỈNH] ______________________________
+[ĐỈNH] Pilot lỗ và có tiền mất thật (ROI 0.27 → 1.16 trên S5; hoàn sai 178.000đ → 0đ; lỗi hãng oan 20 → 0)
  └─ HOẶC
- ├─ [1] ______________ VÀ [gate ______ hỏng]
- ├─ [2] ______________ VÀ [gate ______ hỏng]
- └─ [3] ______________ (còn hở?)
+ ├─ [1] Hoàn lần hai cho đơn đã hoàn             VÀ [cổng 4 hoàn tích lũy trong write_gate hỏng hoặc sổ cái thiếu dòng]
+ ├─ [2] CSKH hoàn tay và trợ lý cùng ghi sổ      VÀ [cổng 4 hỏng] VÀ [CSKH không ghi sổ] (còn hở: quy ước giữa hai đội)
+ ├─ [3] Kho sỉ HCM-B2B luôn chuyển người         VÀ [pilot_scope sai hoặc bị đổi lại] (đã ra khỏi phạm vi)
+ └─ [4] Ticket dán dài làm LLM vượt trần         VÀ [cổng 5 rút gọn trong pre_guard hỏng] (còn hở: yêu cầu nằm sau phần dán)
 ```
 
 | Nhánh | Gate (hàm trong `guards.py` / khoá config / metric trong `monitors.py`) | Tầng gate (phát hiện / chặn / giới hạn thiệt hại / vận hành) | Giảm hay ngăn? Vì sao | Nhánh còn hở |
 |---|---|---|---|---|
-| [1] | | | | |
-| [2] | | | | |
-| [3] | | | | |
+| [1] | `write_gate` nhánh `issue_refund`, cổng 4 (`ledger_rows`, `entitlement_vnd`); metric `duplicate_refund_rate` | chặn, và phát hiện (metric) | **NGĂN**: lệnh hoàn không đi qua nếu quyền lợi đã hết, không đọc chữ của khách | Sổ cái thiếu dòng hoàn tay; hoàn cho đơn khác của cùng khách |
+| [2] | Cùng cổng 4 (đọc dòng `basis: manual`); `operations.decision_note`, `review_sampling_pct` 10%; quy ước CSKH báo trợ lý (runbook 4) | vận hành, phát hiện | **GIẢM**: cổng chỉ thấy khoản đã ghi sổ; phần còn lại phụ thuộc quy trình giữa hai đội | CSKH hoàn tay mà không ghi sổ, hoặc ghi chậm |
+| [3] | `business.pilot_scope` (loại HCM-B2B); `monitors.worst_warehouse_escalation_rate` | giới hạn thiệt hại | **NGĂN** nhánh chi phí kho sỉ vì nhóm đó ra khỏi phạm vi | Độ phủ chỉ 0.6; kho khác có đơn sỉ vẫn có thể thành nhánh mới |
+| [4] | `pre_guard` cổng 5 (`Verdict.rewrite`); `business.cost_budget_per_ticket_vnd` 1.200đ; `operations.reviewers_on_shift` 1 | chặn, giới hạn thiệt hại | **GIẢM**: LLM đắt nhất 2.412đ xuống 950đ, ROI 0.27 lên 1.16 cùng phí người trực | Phần yêu cầu nằm sau 800 ký tự đầu bị bỏ qua; giờ cao điểm chỉ có 1 người trực |
 
 ---
 
@@ -395,7 +401,9 @@ Vẽ lại cây ở C6. Ở mỗi nhánh đã xử lý, thêm một nút `VÀ [g
 
 | Rủi ro | Khả năng | Tác động | Người phụ trách (PIC, một người) | Dấu hiệu (metric nào, ngưỡng nào) | Xử lý | Ảnh hưởng bước đánh giá | Nhóm chức năng (GOVERN / MAP / MEASURE / MANAGE) |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| CSKH hoàn tay mà không ghi sổ cái (hoặc ghi chậm), nên cổng hoàn tích lũy không thấy và trợ lý hoàn trùng | Trung bình | Cao (tiền mất thật, hãng bị ghi lỗi oan) | NV-TUNG | `duplicate_refund_rate` trong `monitors.py` lớn hơn 5% trong một ngày; lỗi hãng oan > 0 trong report | Đối soát sổ cái với CSKH hằng ngày; CSKH ghi sổ trước khi báo khách; dừng `issue_refund` tự động nếu lặp lại (stop_conditions) | Quyết định mở rộng sang kho khác hoặc chuyển Bước đánh giá 2: chỉ mở khi đối soát 5 ngày liền không có hoàn trùng | MANAGE |
+| Rút gọn ticket dài làm mất phần yêu cầu nằm sau 800 ký tự đầu, trợ lý hiểu sai hoặc bỏ sót ca hợp lệ | Thấp | Trung bình (ca hợp lệ bị từ chối hoặc chuyển người) | NV-HANH | `pass_rate` trên mẫu ticket dài trong report; `escalation_rate` tăng bất thường | Lấy mẫu 10 ticket dài mỗi tuần để người đọc nguyên văn; mở rộng giới hạn ký tự nếu có ca sót | Quyết định giữ hay nâng ngưỡng 1.200/800 ký tự trước khi mở rộng | MEASURE |
+| Chỉ 1 người trực duyệt, giờ cao điểm hàng chờ vượt SLA 60 phút | Trung bình | Trung bình | NV-TUNG | `queue_wait_max_min` và `queue_stuck` trong report: chờ lâu nhất > 30 phút hoặc có ca ùn | Gọi NV-HANH vào ca (phí 30.000đ/ngày), dừng nhận tự động nếu chạm 60 phút (runbook 5) | Quyết định có thêm người trực hay thu hẹp phạm vi khi tải tăng | MANAGE |
 
 Quy tắc: **mỗi dòng phải đổi được một quyết định.** Cột "Dấu hiệu" phải là một metric có trong `monitors.py` hoặc trong report.
 
@@ -411,8 +419,8 @@ Ghi các dòng đổi sau sự cố. Mỗi dòng vẫn phải có một PIC có 
 
 | # nhóm | Trạng thái mới (Xong / Chưa / Không áp dụng) | Bằng chứng mới (mã lần chạy, mục phiếu, số trong report) | PIC |
 |---|---|---|---|
-| 7 · Vận hành | Chưa | S5 report `R-S5-grade-20261119-162806-094a29`: 0 ca ùn; 2 người/12 ca mỗi giờ. Bật decision_note và kiểm mẫu 10%; cần report sau sửa để xác nhận | Nguyễn Quang Thành |
-| 8 · Con người, pháp lý | Chưa | C4; S5 report: 20 lỗi ghi oan hãng, PII leak 0; chặn customer_note và yêu cầu nguyên nhân ghi nhận; cần quy trình xác minh/đính chính | Nguyễn Quang Thành |
+| 7 · Vận hành | Xong | S5 `R-S5-after-20261119-171515-4be4d9`: 1 người, 6 ca/giờ, 0 ca ùn, chi phí 4.638đ, ROI 1.16; decision_note và kiểm mẫu 10%; `grade` `R-S5-grade-20261119-171542-4be4d9` (1, 3, 5, 6 ✅). Giờ cao điểm dựa vào người dự phòng (runbook 5) | Nguyễn Quang Thành |
+| 8 · Con người, pháp lý | Chưa | C4; S5 sau sửa: lỗi hãng oan 20 → 0, PII leak 0 (cổng 3, 4); chặn `customer_note` và yêu cầu nguyên nhân ghi nhận. Còn thiếu: quy trình xác minh và đính chính với hãng đã bị ghi oan trước đó, báo đầu mối pháp lý về `customer_note` đã gửi | Nguyễn Quang Thành |
 
 ### Runbook 4 · Sau sự cố trên thẻ (vòng 2)
 
@@ -420,15 +428,15 @@ Ghi các dòng đổi sau sự cố. Mỗi dòng vẫn phải có một PIC có 
 |---|---|
 | Tín hiệu nào ở Runbook 2 (Phiếu B mục B7.5) lẽ ra phải báo trước sự cố này? Nó đã có chưa? | Chi phí theo kho, LLM tối đa/ticket, hoàn lặp, lỗi hãng oan; report S5 cho thấy 20 lỗi hãng oan và LLM tối đa 2.412đ, nhưng stop condition chưa bao phủ rõ các tín hiệu này. |
 | Bàn thêm hoặc đổi ngưỡng nào, từ bao nhiêu thành bao nhiêu? | Giữ SLA 60 phút và trần LLM 1.500đ; dừng xử lý tự động khi có hoàn trùng hoặc lỗi hãng oan, điều tra trước khi bật lại. |
-| Bàn đổi gì về **người** (số người trực, ai đứng tên, ai được gọi)? | Giữ 2 người/12 ca mỗi giờ; NV-TUNG PIC, NV-HANH duyệt/đối soát, gọi NV-OANH khi có khiếu nại. Không tăng người khi report đang có 0 ca ùn. |
-| Bàn đổi gì về **phạm vi** hoặc **quy trình** (kiểm mẫu, ghi chú giải thích, trần)? | Bật decision_note, kiểm mẫu 10%; đối soát ledger theo order_id; giữ ticket cần xác minh ở người duyệt. |
+| Bàn đổi gì về **người** (số người trực, ai đứng tên, ai được gọi)? | Giảm từ 2 người/12 ca mỗi giờ xuống **1 người/6 ca mỗi giờ**: tải thật 4 đến 7 ca chuyển người/ngày, 0 ca ùn, chi phí 6.305đ xuống 4.638đ (ngưỡng đã ký 6.000đ). NV-TUNG PIC, NV-HANH duyệt/đối soát và là người dự phòng, gọi NV-OANH khi có khiếu nại. |
+| Bàn đổi gì về **phạm vi** hoặc **quy trình** (kiểm mẫu, ghi chú giải thích, trần)? | Phạm vi: bỏ kho sỉ HCM-B2B (HN, HCM, DN, CT, độ phủ 0.6). Quy trình: bật decision_note, kiểm mẫu 10%; đối soát sổ cái theo order_id; cổng hoàn tích lũy; rút gọn ticket quá 1.200 ký tự (giữ 800 đầu); giữ ticket cần xác minh ở người duyệt. |
 | Nói gì với bên thứ ba bị ảnh hưởng (hãng, shop, người nhận, nhân viên duyệt), ai nói, trong bao lâu? | NV-OANH cùng NV-TUNG liên hệ hãng/tài xế bị ghi oan trong 1 ngày làm việc, gửi mã vụ việc/dữ kiện tracking đã xác minh, xin đính chính và lưu phản hồi. |
 | Dữ liệu cá nhân nào đã rời hệ thống mà không thu hồi được? Báo cho ai? | PII leak tổng hợp là 0, nhưng trace S5-02 có customer_note trong payload gửi hãng; coi nội dung đã ra ngoài. NV-TUNG báo đầu mối bảo mật/pháp lý và NV-OANH, yêu cầu xóa/xác nhận. |
 | Sự cố lộ ra trước qua số máy đo, phản hồi của người, hay đọc nội dung? Nguồn nào bàn chưa có? | Chỉ số tổng báo lỗi hãng oan; trace mới cho thấy payload cụ thể. Thiếu cảnh báo từng lần ghi và đối soát hãng/sổ cái hằng ngày. |
 
 ### Runbook 5 · Ba kịch bản "nếu … thì …" cho tuần đầu chạy thử thật
 
-1. Nếu số ticket tăng gấp 2 lần trong một giờ thì: NV-TUNG theo dõi queue mỗi 15 phút; khi chờ chạm 60 phút hoặc có ca ùn, dừng nhận tự động và phân luồng thủ công.
+1. Nếu số ticket tăng gấp 2 lần trong một giờ thì: với 1 người trực (6 ca/giờ), NV-TUNG theo dõi queue mỗi 15 phút; khi hàng chờ ≥ 6 ca hoặc chờ lâu nhất > 30 phút thì gọi NV-HANH vào ca (phí giữ chỗ 30.000đ); khi chờ chạm 60 phút hoặc có ca ùn, dừng nhận tự động và phân luồng thủ công.
 2. Nếu nhà cung cấp LLM lỗi quá 5 phút thì: chuyển ticket sang CSKH, không retry liên tục; chỉ bật lại sau khi kiểm tra trace mẫu.
 3. Nếu người duyệt báo không tin một quyết định của trợ lý thì: giữ lệnh ghi, NV-HANH xác minh tracking/policy/ledger; NV-TUNG mở lại sau khi lưu kết luận và lý do.
 
