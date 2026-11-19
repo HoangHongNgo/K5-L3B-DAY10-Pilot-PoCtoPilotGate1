@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo Lab 10 · Thẻ S5 · Nhóm Pilot</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1b2430; --mute:#5d6b7c; --line:#dfe4ea;
+    --good:#0f7b4f; --good-bg:#e3f4ec; --bad:#b3261e; --bad-bg:#fbe9e7; --warn:#8a5a00; --warn-bg:#fdf3dc;
+    --acc:#2b5fd9; --acc-bg:#e8eefc;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#12161c; --card:#1b212a; --ink:#e8edf3; --mute:#9aa7b6; --line:#2d3643;
+      --good:#58d39b; --good-bg:#14352a; --bad:#ff8a80; --bad-bg:#3a1f1d; --warn:#f0c36a; --warn-bg:#3a2e14;
+      --acc:#8fb0ff; --acc-bg:#1d2a4a;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--ink);font:17px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{display:flex;align-items:center;gap:16px;padding:12px 28px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:5}
+  header h1{font-size:16px;margin:0;font-weight:650}
+  header .meta{color:var(--mute);font-size:14px}
+  .spacer{flex:1}
+  .timer{font-variant-numeric:tabular-nums;font-weight:650;padding:4px 12px;border-radius:999px;background:var(--acc-bg);color:var(--acc);min-width:76px;text-align:center}
+  .timer.over{background:var(--bad-bg);color:var(--bad)}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 12px}
+  button:hover{border-color:var(--acc)}
+  button.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
+  main{max-width:1180px;margin:0 auto;padding:22px 28px 90px}
+  .slide{display:none}
+  .slide.on{display:block}
+  .slide h2{font-size:28px;margin:4px 0 4px}
+  .sub{color:var(--mute);margin:0 0 18px}
+  .slot{display:inline-block;font-size:13px;padding:2px 10px;border-radius:999px;background:var(--acc-bg);color:var(--acc);margin-bottom:6px}
+  table{border-collapse:collapse;width:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th,td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--line)}
+  th{background:var(--bg);font-size:14px;color:var(--mute);font-weight:650}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  tr:last-child td{border-bottom:0}
+  .good{color:var(--good);background:var(--good-bg);font-weight:650}
+  .bad{color:var(--bad);background:var(--bad-bg);font-weight:650}
+  .warn{color:var(--warn);background:var(--warn-bg);font-weight:650}
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media (max-width:860px){.g2,.g3{grid-template-columns:1fr} main{padding:16px}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .card h3{margin:0 0 6px;font-size:18px}
+  .card ul{margin:6px 0 0;padding-left:20px}
+  .card li{margin:4px 0}
+  .tag{display:inline-block;font-size:12px;font-weight:650;padding:2px 8px;border-radius:6px;margin-right:6px}
+  .tag.g{background:var(--good-bg);color:var(--good)} .tag.r{background:var(--bad-bg);color:var(--bad)} .tag.y{background:var(--warn-bg);color:var(--warn)}
+  pre{margin:8px 0;padding:12px 14px;background:#0f1722;color:#d6e2f2;border-radius:8px;overflow:auto;font:13.5px/1.45 ui-monospace,Consolas,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
+  .cmd{position:relative}
+  .cmd pre{padding-right:92px}
+  .cmd button{position:absolute;top:14px;right:8px;font-size:12px;padding:2px 8px;background:#223049;color:#cfe0f7;border-color:#34476a}
+  .note{margin-top:14px;padding:12px 16px;border-left:4px solid var(--warn);background:var(--warn-bg);border-radius:0 8px 8px 0}
+  .big{font-size:40px;font-weight:700;line-height:1.1}
+  .kpi{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+  .kpi .card{flex:1;min-width:190px;text-align:center}
+  .kpi .l{color:var(--mute);font-size:13px}
+  nav.foot{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;align-items:center;padding:10px 28px;border-top:1px solid var(--line);background:var(--card);z-index:5}
+  .dots{display:flex;gap:6px;margin:0 8px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--line);cursor:pointer}
+  .dot.on{background:var(--acc)}
+  small{color:var(--mute)}
+  code{background:var(--bg);padding:1px 6px;border-radius:5px;font:0.92em ui-monospace,Consolas,monospace}
+</style>
+</head>
+<body>
+<header>
+  <h1>Lab 10 · Thẻ S5 · CFO: mỗi ticket đắt hơn làm tay</h1>
+  <span class="meta">Nhóm Pilot · L3B</span>
+  <span class="spacer"></span>
+  <span class="timer" id="timer">5:00</span>
+  <button id="tbtn" class="primary">Bắt đầu</button>
+</header>
+
+<main>
+
+<!-- 1 -->
+<section class="slide on" data-slot="0:00 – 1:30">
+  <span class="slot">Slide 1 · 0:00 – 1:30</span>
+  <h2>Ba mốc: base · prepared · after</h2>
+  <p class="sub">Gói sự cố S5, báo cáo tự kiểm tra <code>R-S5-grade-20261119-171542-4be4d9</code>. Mốc prepared là cổng vòng 1 đã chốt trước khi biết sự cố.</p>
+  <table>
+    <thead><tr><th>Chỉ số</th><th class="n">base</th><th class="n">prepared</th><th class="n">after</th></tr></thead>
+    <tbody>
+      <tr><td>pass_rate</td><td class="n bad">0.8333</td><td class="n bad">0.8333</td><td class="n good">1.0</td></tr>
+      <tr><td>Hoàn sai (tổng các lần chạy)</td><td class="n bad">890.000đ</td><td class="n bad">890.000đ</td><td class="n good">0đ</td></tr>
+      <tr><td>Lỗi ghi oan cho hãng</td><td class="n bad">20</td><td class="n bad">20</td><td class="n good">0</td></tr>
+      <tr><td>Lộ dữ liệu cá nhân</td><td class="n good">0</td><td class="n good">0</td><td class="n good">0</td></tr>
+      <tr><td>Chi phí mỗi ticket (làm tay 10.000đ)</td><td class="n warn">6.083đ</td><td class="n bad">7.504đ</td><td class="n good">4.638đ</td></tr>
+      <tr><td>ROI (ngưỡng ≥ 0.5)</td><td class="n bad">-0.33</td><td class="n bad">-0.46</td><td class="n good">1.16</td></tr>
+      <tr><td>Tiền LLM ticket đắt nhất (trần 1.500đ)</td><td class="n bad">2.412đ</td><td class="n good">668đ</td><td class="n good">950đ</td></tr>
+      <tr><td>Người trực · ca duyệt/giờ</td><td class="n">1 · 6</td><td class="n">2 · 12</td><td class="n">1 · 6</td></tr>
+      <tr><td>Độ phủ pilot</td><td class="n">1.0</td><td class="n">1.0</td><td class="n warn">0.6</td></tr>
+    </tbody>
+  </table>
+  <p><small>Hoàn sai là tổng trên các seed của bộ thử; "ngày tệ nhất" ở báo cáo kinh doanh là 178.000đ (base, prepared) và 0đ (after).</small></p>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-slot="1:30 – 2:30">
+  <span class="slot">Slide 2 · 1:30 – 2:30</span>
+  <h2>Cổng vòng 1 đã đỡ được gì, bỏ sót gì</h2>
+  <p class="sub">Chốt lúc phút 105–115, hash <code>60b8f2a6</code>, trước khi nhận thẻ.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3><span class="tag g">ĐỠ ĐƯỢC</span></h3>
+      <ul>
+        <li>Tiền LLM vượt trần: <b>2.412đ → 668đ</b> nhờ <code>cost_budget_per_ticket_vnd</code> 1.200đ</li>
+        <li>Lộ dữ liệu cá nhân giữ ở <b>0</b> (cổng 3: chỉ gửi hãng các trường chính sách cho phép)</li>
+        <li>Bộ nền: <code>T-002@55</code> hoàn sai 20.000đ → 0, lỗi hãng oan 1 → 0</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="tag r">BỎ SÓT</span></h3>
+      <ul>
+        <li><b>Hoàn trùng:</b> 890.000đ và 20 lỗi hãng oan <b>không đổi</b> ở prepared, vì cổng 1–2 so với tracking nhưng không đọc sổ cái</li>
+        <li><b>Kho sỉ HCM-B2B:</b> 10.382đ/ticket, đắt hơn làm tay 10.000đ</li>
+        <li><b>2 người trực</b> ở vòng 1 làm ROI âm (−0.46) vì phí giữ chỗ 30.000đ/người/ngày</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">Bài học: cổng vòng 1 viết từ pre-mortem rất tốt cho rủi ro đã nghĩ tới (tiền, dữ liệu cá nhân); phần kinh doanh và quy trình giữa hai đội thì chỉ lộ ra khi có sự cố.</div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-slot="2:30 – 4:00">
+  <span class="slot">Slide 3 · 2:30 – 4:00</span>
+  <h2>Phần sửa vòng 2: code · con số · người</h2>
+  <p class="sub">Mỗi lần đổi MỘT thứ rồi chạy lại, bộ nền luôn kiểm lại không hỏng ca nào.</p>
+  <div class="grid g3">
+    <div class="card">
+      <h3>Code <small>(HOÀNG)</small></h3>
+      <ul>
+        <li><b>Cổng 4</b> hoàn tích lũy theo sổ cái (<code>write_gate</code>): hết quyền lợi thì chuyển người, còn dư thì chỉ hoàn phần còn lại</li>
+        <li><b>Cổng 5</b> rút gọn ticket quá 1.200 ký tự (<code>pre_guard</code>): ROI <b>0.27 → 0.59</b></li>
+        <li><b>Chỉ số mới</b> <code>duplicate_refund_rate</code>: 0 → 0.28 trên S5</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Con số <small>(VỸ)</small></h3>
+      <ul>
+        <li><code>business.pilot_scope</code>: bỏ kho sỉ HCM-B2B, giữ HN, HCM, DN, CT</li>
+        <li>Không thu hẹp về 0: độ phủ <b>0.6</b></li>
+        <li>Kho "đắt hơn làm tay": <b>1 → 0</b></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Người <small>(THÀNH)</small></h3>
+      <ul>
+        <li>Từ 2 xuống <b>1 người trực</b>: chi phí 6.305đ → <b>4.638đ</b>, ROI 0.59 → <b>1.16</b>, vẫn 0 ca ùn</li>
+        <li>Người dự phòng NV-HANH khi hàng chờ ≥ 6 ca</li>
+        <li><code>decision_note</code>, kiểm mẫu 10%; quy ước CSKH ghi sổ trước khi báo khách</li>
+      </ul>
+    </div>
+  </div>
+  <div class="kpi" style="margin-top:16px">
+    <div class="card"><div class="l">integrity</div><div class="big" style="color:var(--good)">✅</div></div>
+    <div class="card"><div class="l">visible</div><div class="big" style="color:var(--good)">✅</div></div>
+    <div class="card"><div class="l">regression (bộ nền)</div><div class="big" style="color:var(--good)">✅</div></div>
+    <div class="card"><div class="l">monitor</div><div class="big" style="color:var(--good)">✅</div></div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-slot="phản biện">
+  <span class="slot">Slide 4 · Ticket hiểm cho bàn phản biện</span>
+  <h2>Hai ca chạy trực tiếp</h2>
+  <p class="sub">Lệnh chỉ đọc, không ghi dấu gì. Chạy trong thư mục repo bằng <code>python</code>.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3><span class="tag g">CA A</span> Hoàn trùng với đơn CSKH đã hoàn tay</h3>
+      <p>Đơn <code>O-2520</code> đã có dòng CSKH hoàn 20.000đ trong sổ cái.</p>
+      <div class="cmd"><pre id="a1">python -m lab10.trace --suite S5 --stage base --adhoc "Hôm qua tôi gọi tổng đài về đơn giao chậm, nay nhắn lại cho chắc." --order O-2520 --customer C-11</pre><button data-copy="a1">Sao chép</button></div>
+      <div class="cmd"><pre id="a2">python -m lab10.trace --suite S5 --stage after --adhoc "Hôm qua tôi gọi tổng đài về đơn giao chậm, nay nhắn lại cho chắc." --order O-2520 --customer C-11</pre><button data-copy="a2">Sao chép</button></div>
+      <p><span class="tag r">base</span> hoàn thêm 20.000đ và ghi lỗi hãng VNX.<br>
+         <span class="tag g">after</span> sự kiện <code>guard_cumulative_refund</code> → chuyển người; sổ cái và lỗi hãng rỗng.</p>
+    </div>
+    <div class="card">
+      <h3><span class="tag y">CA B</span> Điểm hở của cổng 5</h3>
+      <p>Yêu cầu nằm <b>sau</b> hơn 800 ký tự dán kèm, nên bị cắt mất.</p>
+      <div class="cmd"><pre id="b1">python -m lab10.trace --suite S5 --stage after --adhoc "--- Danh sách hàng khách dán kèm ---
+(dán 16 dòng: Mã hàng SP-1000, số lượng 1, đơn giá 85.000, kệ A00, ghi chú kho: đã đối chiếu phiếu xuất.)
+Đơn lẻ của tôi giao chậm, xin hoàn phí ship." --order O-2570 --customer C-01</pre><button data-copy="b1">Sao chép</button></div>
+      <p><span class="tag y">kết quả đã chạy thử</span> <code>guard_long_ticket_trimmed</code> (1.552 → 800 ký tự), trợ lý phân loại <code>OTHER</code> và chỉ trả lời "đã ghi nhận câu hỏi": không hoàn, không chuyển người. Cùng nội dung nhưng yêu cầu ở dòng đầu thì hoàn đúng 18.000đ.</p>
+    </div>
+  </div>
+  <div class="note"><b>Nói trước khi bị hỏi:</b> đây là lỗi nhẹ (không mất tiền, không ghi oan hãng) nhưng khách không được phục vụ. Đã ghi ở risk register C10 (PIC NV-HANH, lấy mẫu 10 ticket dài mỗi tuần). Hướng sửa: giữ cả đầu lẫn cuối, hoặc cắt theo dấu hiệu "khách dán kèm", rồi chạy lại bộ nền và S5.</div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-slot="4:00 – 5:00">
+  <span class="slot">Slide 5 · 4:00 – 5:00</span>
+  <h2>Quyết định v2: <span style="color:var(--acc)">Thu hẹp</span></h2>
+  <p class="sub">v1 (bộ nền) là Tiếp tục. v2 đổi vì S5 cho thấy kho sỉ mà bộ nền không có.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Vì sao Thu hẹp</h3>
+      <ul>
+        <li>Mọi chỉ số an toàn bằng 0; mọi ngưỡng đã ký đạt <b>sau khi cắt</b> kho HCM-B2B</li>
+        <li>Cắt đúng phần không có lời, độ phủ còn <b>0.6 &gt; 0</b>, phần cắt về làm tay</li>
+        <li>Chi phí <b>4.638đ</b> ≤ 6.000đ · ROI <b>1.16</b> ≥ 0.5 · 0 ca ùn</li>
+        <li>Quyết định lại: <b>30/11/2026</b>, trước khi REFUND-v4 hiệu lực</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Cổng NGĂN hay GIẢM?</h3>
+      <ul>
+        <li><b>NGĂN</b> hoàn trùng khi sổ cái đầy đủ: cổng chặn ngay trước lệnh <code>issue_refund</code></li>
+        <li><b>GIẢM</b> với cả hệ thống: phụ thuộc CSKH ghi sổ đúng lúc</li>
+        <li>Chưa đo được hôm nay: ghi sổ chậm, tỉ lệ khách nhắn lại, ca dài bị hiểu sai</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note"><b>Cần đo lại trong pilot thật:</b> chi phí mỗi ticket theo từng kho với tiền LLM và công duyệt thật · độ trễ ghi sổ của CSKH · tỉ lệ ca hợp lệ bị hiểu sai do rút gọn · hàng chờ của 1 người trực khi giờ cao điểm.</div>
+</section>
+
+</main>
+
+<nav class="foot">
+  <button id="prev">← Trước</button>
+  <div class="dots" id="dots"></div>
+  <button id="next" class="primary">Sau →</button>
+  <span class="spacer"></span>
+  <small>Phím ← → để chuyển slide · Cách để bắt đầu/dừng giờ</small>
+</nav>
+
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var dots=document.getElementById('dots'), cur=0;
+  slides.forEach(function(_,i){var d=document.createElement('div');d.className='dot';d.onclick=function(){go(i)};dots.appendChild(d)});
+  function go(i){
+    cur=Math.max(0,Math.min(slides.length-1,i));
+    slides.forEach(function(s,k){s.classList.toggle('on',k===cur)});
+    [].slice.call(dots.children).forEach(function(d,k){d.classList.toggle('on',k===cur)});
+    window.scrollTo(0,0);
+    try{history.replaceState(null,'','#'+(cur+1))}catch(e){}
+  }
+  document.getElementById('prev').onclick=function(){go(cur-1)};
+  document.getElementById('next').onclick=function(){go(cur+1)};
+  var h=parseInt((location.hash||'').slice(1),10); go(isNaN(h)?0:h-1);
+
+  var left=300, tick=null, tEl=document.getElementById('timer'), tBtn=document.getElementById('tbtn');
+  function fmt(s){var a=Math.abs(s);return (s<0?'-':'')+Math.floor(a/60)+':'+('0'+(a%60)).slice(-2)}
+  function paint(){tEl.textContent=fmt(left);tEl.classList.toggle('over',left<0)}
+  function toggle(){
+    if(tick){clearInterval(tick);tick=null;tBtn.textContent='Tiếp tục';}
+    else{tick=setInterval(function(){left--;paint()},1000);tBtn.textContent='Dừng';}
+  }
+  tBtn.onclick=toggle; paint();
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key==='PageDown')go(cur+1);
+    else if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);
+    else if(e.key===' '&&!/BUTTON|INPUT/.test((e.target||{}).tagName||'')){e.preventDefault();toggle()}
+  });
+  [].slice.call(document.querySelectorAll('[data-copy]')).forEach(function(b){
+    b.onclick=function(){
+      var t=document.getElementById(b.getAttribute('data-copy')).textContent;
+      function ok(){var o=b.textContent;b.textContent='Đã chép';setTimeout(function(){b.textContent=o},1200)}
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,function(){})}
+      else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok()}catch(e){}document.body.removeChild(ta)}
+    };
+  });
+})();
+</script>
+</body>
+</html>

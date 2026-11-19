@@ -24,23 +24,27 @@ Ghi `members` trong `submission/submission.json` theo dạng `"HoVaTen-MSSV"`, k
 
 Mỗi thành viên tự viết một mục bên dưới (chép mẫu, đổi tiêu đề thành họ tên không dấu và MSSV, ví dụ `## NguyenVanAn-20241234`).
 
-## HoVaTen-MSSV
+## NgoHongHoang-2A202604093
 
 ### Phần việc phụ trách
 
-Vai trong bàn; câu nào của đề, mục nào của phiếu A/B/C, file nào (`lab10/guards.py`, `config/operating_gates.json`, …).
+Vai **Kỹ sư cổng** và trưởng nhóm. Câu 2.1, 2.2 (B0–B2), 2.6–2.8 (B7.1–B7.3); các lệnh ghi dấu một lần (ký tiêu chí, chốt cổng vòng 1, nhận thẻ S5); vòng 2: C2 (bảng soát lỗi), C8, sửa `lab10/guards.py` và `lab10/monitors.py` cho thẻ S5, chạy `eval` và `grade`, demo ba cột `base · prepared · after`. File: `lab10/guards.py`, `lab10/monitors.py`.
 
 ### Đóng góp cụ thể
 
-...
+- Ký tiêu chí (`Sign acceptance criteria`) trước mọi lần chạy `eval`; chạy baseline, dò `T-002@55`, điền B2.
+- Dựng 3 cổng vòng 1 trong `guards.py`: hoàn theo dữ liệu DB, lỗi hãng theo DB, bỏ trường PII khỏi tin gửi hãng; chốt vòng 1 (mốc prepared `60b8f2a6`).
+- Thẻ S5: cổng 4 chặn hoàn theo quyền lợi tích lũy trong sổ cái (ngăn hoàn trùng); cổng 5 rút gọn ticket dài để giảm tiền LLM; thêm hai chỉ số `duplicate_refund_rate` và `worst_warehouse_escalation_rate` trong `monitors.py`.
+- Kết quả mốc after: bộ base và bộ S5 đều pass 1.0, hoàn sai 0 đ, oan 0, PII 0.
 
 ### Bằng chứng
 
-Mã commit, mã lần chạy (`runs/<mã>`), dòng trong phiếu.
+- Commit: `57a0990` (ký), `c4312c4`, `696ab69` (cổng vòng 1), `af89011` (chốt vòng 1), `16996d9` (nhận thẻ S5), `93992d3` (cổng 4), `33fb3f5` (monitor), `fdd7b0a` (cổng 5).
+- Lần chạy: `runs/R-S5-grade-20261119-234652-4be4d9` (grade, `1 integrity`, `3 visible`, `5 regression`, `6 monitor` đạt); `submission/runs/` có `journal.jsonl` và report ba mốc.
 
 ### Exit ticket
 
-Một điều học được, một điều còn chưa chắc.
+Học được: cổng chặn phải dựa vào số liệu thật trong sổ cái chứ không dựa vào lời khách, và mỗi lần chỉ đổi một thứ mới biết thứ nào đỡ được con số. Chưa chắc: cổng hoàn tích lũy còn đúng không khi CSKH ghi sổ chậm ngoài đời thật.
 
 ## DoHongVy-2A202604107
 
