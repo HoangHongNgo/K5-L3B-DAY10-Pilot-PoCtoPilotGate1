@@ -252,11 +252,14 @@ Bốn lăng kính (bắt buộc đủ cả bốn; dự án AI hay chết ở ba 
 
 | Lý do thất bại (viết ở thì quá khứ) | Lăng kính | Kiểm được hôm nay? (trace / data / config nào) | Thành cổng phòng ngừa nào (code hay config) / hay vào risk register |
 |---|---|---|---|
-| | Kỹ thuật | | |
-| | Kinh doanh | | |
-| | Con người và vận hành | | |
-| | Pháp lý | | |
-| | | | |
+| Trợ lý đã tin số ngày trễ khách khai hơn số trong tracking, tự hoàn tiền và ghi lỗi oan cho hãng mà không ai duyệt, nên Finance và hãng mất tin vào trợ lý. | Kỹ thuật | Có. `T-002@55`: DB trễ 2 ngày, khách khai 5, `model_override`, hoàn 20.000đ với `approval_id: null`, lỗi hãng VNX 5 ngày. Báo cáo base `R-base-before-20261119-151835-bde05c`: `wrongful_refund_vnd` 20.000, `wrongful_carrier_faults` 1. | ★ **Cổng (code):** `write_gate` cổng 1 (`issue_refund`: vượt quyền lợi theo DB thì `escalate`) và cổng 2 (`file_carrier_fault`: chỉ ghi khi DB xác nhận). Theo dõi bằng `model_override` mỗi ngày. |
+| Ngoài đời, độ chính xác của trợ lý chỉ đạt khoảng 75%, không hơn người làm, và độ hài lòng của khách giảm vì họ không tin trợ lý. | Kỹ thuật | Kiểm được một phần. Trên bộ nền, base đạt `pass_rate` 0.9909 [0.9727, 1.0] và `pass_k` 0.9545 (110 trial), cao hơn nhiều mức 75% giả định và trên ngưỡng đã ký (0.96 và 0.86). Nhưng bộ nền chỉ có 22 ticket mẫu, chưa phải lưu lượng thật. Hôm nay chưa có số liệu độ chính xác của người làm và chưa đo được độ hài lòng của khách. | **Risk register**, không thành cổng. Theo dõi `escalation_rate` (base 0.2273, ngưỡng ≤ 0.25) và `pass_rate` trên mẫu ticket thật khi pilot chạy; việc cần làm là lấy độ chính xác của người làm để so và hỏi khách sau khi xử lý. |
+| Sau khi REFUND-v4 hạ hạn mức tự động, tỉ lệ chuyển người vượt 25%, chi phí mỗi ticket vượt 6.000đ và Finance thấy trợ lý không còn rẻ hơn làm tay. | Kinh doanh | Có. Base: chuyển người 0.2273, chi phí 4.203đ (làm tay 10.000đ), ROI 1.34 (`R-base-before-20261119-151835-bde05c`). `data/world.json` có REFUND-v4 hiệu lực từ 2026-12-01 (cần đọc kỹ hạn mức mới). | **Cổng (config):** `business.cost_budget_per_ticket_vnd`, `business.roi_min`. **Risk register:** theo dõi hằng ngày khi v4 có hiệu lực. |
+| Một ngày trợ lý đã tự hoàn vượt ngân sách Finance 2.000.000đ, hoặc hoàn sai hàng loạt mà không có trần chặn. | Kinh doanh | Có. B1 ghi "trần bàn đặt: chưa đặt"; ngày hoàn tự động cao nhất ở base là 155.000đ (ngân sách 2.000.000đ). | ★ **Cổng (config):** `business.daily_refund_cap_vnd` (B7.4, việc của Vỹ). |
+| Ca chuyển người đã vượt SLA 60 phút vì chỉ có một người duyệt, nhưng trợ lý vẫn tiếp tục nhận ticket. | Con người và vận hành | Có. `data/world.json` ghi một người trực mặc định, năng lực 6 ca/giờ, SLA 60 phút. Base: 5.0 ca/ngày vào hàng chờ, chờ lâu nhất 0 phút, 0 ca bị ùn (chưa tính giờ cao điểm). | **Cổng (config):** `operations.reviewers_on_shift`, `review_capacity_per_hour`, `max_queue_wait_minutes`, `stop_conditions` (B7.5, việc của Thành). Mục **Giờ cao điểm** (B7.6) cho thấy khi lượng ticket tăng thì dừng nhận. |
+| Số điện thoại của người nhận quà đã bị gửi cho hãng cùng thông báo lỗi giao, dù người đó không mở ticket. | Pháp lý | Có. Đơn `O-1024` có người nhận quà riêng; `policies[].carrier_notice_fields` chỉ liệt kê `order_id`, `parcel_id`, `district`, `delay_days`. Trace `T-002@55` bước 08 từng gửi `customer_note` cho hãng. | ★ **Cổng (code và config):** `write_gate` cổng 3 (`notify_carrier` chỉ cho trường trong `carrier_notice_fields`), cộng `legal.pii_fields_blocked_to_third_party` (Thành). |
+
+★ = ba lý do chọn làm cổng chính: hoàn và lỗi hãng sai (code), trần hoàn tiền ngày (config), dữ liệu cá nhân gửi hãng (code và config). Quá tải người duyệt vẫn là cổng con số ở B7.5; hai lý do còn lại vào risk register.
 
 ---
 
