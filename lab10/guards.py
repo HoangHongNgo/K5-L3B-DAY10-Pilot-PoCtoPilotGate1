@@ -33,7 +33,7 @@ from . import helpers as H  # noqa: F401
 from .tools import Verdict
 
 # Các trường không được đưa cho bên thứ ba, gộp với config legal.
-_PII_DEFAULT = {"customer_note", "district", "customer_id", "phone", "address"}
+_PII_DEFAULT = {"customer_note", "customer_id", "phone", "address"}
 
 
 def _db_facts(ctx, action):
@@ -83,10 +83,16 @@ def write_gate(ctx, action):
 
     # Cổng 3: không gửi dữ liệu cá nhân cho hãng
     if tool == "notify_carrier":
-        blocked = _PII_DEFAULT | set(
+        policy = H.effective_policy(ctx.tools.lookup_policies(), ctx.as_of)
+        legal_blocked = set(
             ctx.gates.get("legal", {}).get("pii_fields_blocked_to_third_party", []))
         payload = action.get("payload", {})
-        clean = {k: v for k, v in payload.items() if k not in blocked}
+        if policy and policy.get("carrier_notice_fields"):
+            # chỉ gửi đúng trường chính sách cho phép, và config pháp lý có quyền chặn thêm
+            allowed = set(policy["carrier_notice_fields"]) - legal_blocked
+            clean = {k: v for k, v in payload.items() if k in allowed}
+        else:
+            clean = {k: v for k, v in payload.items() if k not in _PII_DEFAULT | legal_blocked}
         if clean != payload:
             return Verdict.modify("bỏ trường cá nhân khỏi tin gửi hãng", payload=clean)
 
