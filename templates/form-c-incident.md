@@ -242,9 +242,10 @@ Tool chọn phân tích: `________________`
 
 | Tham số / dòng dữ liệu | Guideword (WRONG / INVALID / INCOMPLETE / PERTURBED / INCAPABLE) | Lệch cụ thể (mã ticket, trường dữ liệu của thẻ) | Hậu quả, cho ai | Hiện có gì ngăn? | Gate đề xuất + tầng |
 |---|---|---|---|---|---|
-| | | | | | |
-| | | | | | |
-| | | | | | |
+| `cost_vnd` theo độ dài ticket | INVALID | S5-50: danh sách dài làm tiền LLM 1.856đ, vượt ngưỡng 1.500đ; chuyển người vẫn tốn thêm công | LogiX chịu cả tiền máy và công xử lý | Report có phát hiện trần nhưng chưa có cách dừng theo kho/ca | Ghi chú quyết định, kiểm mẫu 10%; cảnh báo chi phí và chuyển người · operations/monitor |
+| `order_id` và sổ cái hoàn (lặp tuần tự) | WRONG | S5-01 → S5-02 cùng đơn có thể bị hoàn lặp; card ghi nhận có đơn hoàn 2–3 lần | LogiX mất tiền; CSKH và khách khó đối soát | Cổng quyền lợi tích lũy trong ledger mới được nhóm bổ sung; vẫn cần đối soát và theo dõi tỷ lệ hoàn trùng | NV-HANH kiểm ledger theo order_id; dừng hoàn khi phát hiện trùng · guard + operations |
+| Hai yêu cầu đồng thời cùng `order_id` *(nhánh chưa thấy trên trace)* | INCAPABLE | Hai ticket gửi gần đồng thời có thể cùng đọc trạng thái “chưa hoàn” trước khi một lệnh ghi cập nhật ledger; chưa có bằng chứng trace tải đồng thời | Có thể ghi hai khoản hoàn hợp lệ riêng lẻ nhưng tổng tiền bị trả hai lần | Cổng theo ledger có thể không bắt được race nếu kiểm tra và ghi không nguyên tử; monitor duplicate_refund_rate phát hiện sau khi xảy ra | Khóa/idempotency nguyên tử theo order_id; đối soát cuối ngày, tạm dừng khi có duplicate · guard + operations |
+| `cause` và `customer_note` gửi hãng | PERTURBED | S5 report ghi 20 lỗi hãng oan; trace S5-02 chứa customer_note trong payload hãng | Hãng/tài xế bị ghi oan, nội dung khách đã ra ngoài | Cấu hình yêu cầu nguyên nhân ghi nhận và chặn customer_note; chỉ yêu cầu recorded cause chưa xác nhận tính đúng | Người duyệt xác minh tracking; NV-OANH tiếp nhận đính chính · legal/operations |
 
 Bắt buộc: ít nhất ba dòng, trong đó **một dòng là nhánh bàn chưa thấy trên trace** lúc viết.
 
@@ -392,26 +393,26 @@ Ghi các dòng đổi sau sự cố. Mỗi dòng vẫn phải có một PIC có 
 
 | # nhóm | Trạng thái mới (Xong / Chưa / Không áp dụng) | Bằng chứng mới (mã lần chạy, mục phiếu, số trong report) | PIC |
 |---|---|---|---|
-| | | | |
-| | | | |
+| 7 · Vận hành | Chưa | S5 report `R-S5-grade-20261119-162806-094a29`: 0 ca ùn; 2 người/12 ca mỗi giờ. Bật decision_note và kiểm mẫu 10%; cần report sau sửa để xác nhận | Nguyễn Quang Thành |
+| 8 · Con người, pháp lý | Chưa | C4; S5 report: 20 lỗi ghi oan hãng, PII leak 0; chặn customer_note và yêu cầu nguyên nhân ghi nhận; cần quy trình xác minh/đính chính | Nguyễn Quang Thành |
 
 ### Runbook 4 · Sau sự cố trên thẻ (vòng 2)
 
 | Câu hỏi | Trả lời |
 |---|---|
-| Tín hiệu nào ở Runbook 2 (Phiếu B mục B7.5) lẽ ra phải báo trước sự cố này? Nó đã có chưa? | |
-| Bàn thêm hoặc đổi ngưỡng nào, từ bao nhiêu thành bao nhiêu? | |
-| Bàn đổi gì về **người** (số người trực, ai đứng tên, ai được gọi)? | |
-| Bàn đổi gì về **phạm vi** hoặc **quy trình** (kiểm mẫu, ghi chú giải thích, trần)? | |
-| Nói gì với bên thứ ba bị ảnh hưởng (hãng, shop, người nhận, nhân viên duyệt), ai nói, trong bao lâu? | |
-| Dữ liệu cá nhân nào đã rời hệ thống mà không thu hồi được? Báo cho ai? | |
-| Sự cố lộ ra trước qua số máy đo, phản hồi của người, hay đọc nội dung? Nguồn nào bàn chưa có? | |
+| Tín hiệu nào ở Runbook 2 (Phiếu B mục B7.5) lẽ ra phải báo trước sự cố này? Nó đã có chưa? | Chi phí theo kho, LLM tối đa/ticket, hoàn lặp, lỗi hãng oan; report S5 cho thấy 20 lỗi hãng oan và LLM tối đa 2.412đ, nhưng stop condition chưa bao phủ rõ các tín hiệu này. |
+| Bàn thêm hoặc đổi ngưỡng nào, từ bao nhiêu thành bao nhiêu? | Giữ SLA 60 phút và trần LLM 1.500đ; dừng xử lý tự động khi có hoàn trùng hoặc lỗi hãng oan, điều tra trước khi bật lại. |
+| Bàn đổi gì về **người** (số người trực, ai đứng tên, ai được gọi)? | Giữ 2 người/12 ca mỗi giờ; NV-TUNG PIC, NV-HANH duyệt/đối soát, gọi NV-OANH khi có khiếu nại. Không tăng người khi report đang có 0 ca ùn. |
+| Bàn đổi gì về **phạm vi** hoặc **quy trình** (kiểm mẫu, ghi chú giải thích, trần)? | Bật decision_note, kiểm mẫu 10%; đối soát ledger theo order_id; giữ ticket cần xác minh ở người duyệt. |
+| Nói gì với bên thứ ba bị ảnh hưởng (hãng, shop, người nhận, nhân viên duyệt), ai nói, trong bao lâu? | NV-OANH cùng NV-TUNG liên hệ hãng/tài xế bị ghi oan trong 1 ngày làm việc, gửi mã vụ việc/dữ kiện tracking đã xác minh, xin đính chính và lưu phản hồi. |
+| Dữ liệu cá nhân nào đã rời hệ thống mà không thu hồi được? Báo cho ai? | PII leak tổng hợp là 0, nhưng trace S5-02 có customer_note trong payload gửi hãng; coi nội dung đã ra ngoài. NV-TUNG báo đầu mối bảo mật/pháp lý và NV-OANH, yêu cầu xóa/xác nhận. |
+| Sự cố lộ ra trước qua số máy đo, phản hồi của người, hay đọc nội dung? Nguồn nào bàn chưa có? | Chỉ số tổng báo lỗi hãng oan; trace mới cho thấy payload cụ thể. Thiếu cảnh báo từng lần ghi và đối soát hãng/sổ cái hằng ngày. |
 
 ### Runbook 5 · Ba kịch bản "nếu … thì …" cho tuần đầu chạy thử thật
 
-1. Nếu số ticket tăng gấp ___ lần trong một giờ thì: …
-2. Nếu nhà cung cấp LLM lỗi quá ___ phút thì: …
-3. Nếu người duyệt báo không tin một quyết định của trợ lý thì: …
+1. Nếu số ticket tăng gấp 2 lần trong một giờ thì: NV-TUNG theo dõi queue mỗi 15 phút; khi chờ chạm 60 phút hoặc có ca ùn, dừng nhận tự động và phân luồng thủ công.
+2. Nếu nhà cung cấp LLM lỗi quá 5 phút thì: chuyển ticket sang CSKH, không retry liên tục; chỉ bật lại sau khi kiểm tra trace mẫu.
+3. Nếu người duyệt báo không tin một quyết định của trợ lý thì: giữ lệnh ghi, NV-HANH xác minh tracking/policy/ledger; NV-TUNG mở lại sau khi lưu kết luận và lý do.
 
 ---
 
