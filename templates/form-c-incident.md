@@ -30,7 +30,7 @@ Mỗi lệnh `lab10.eval` và `lab10.grade` tự ghi một dòng vào `runs/jour
 
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
-| 1 | | Sx · prepared | nhận thẻ đã bốc, chưa sửa thêm (đúng cổng vòng 1 đã chốt) | | | | | |
+| 1 | `R-S5-prepared-20261119-161957-c48046` | S5 · prepared | nhận thẻ đã bốc, chưa sửa thêm (đúng cổng vòng 1 đã chốt) | 0.8333 [0.7, 0.9667] | 0.8333 | 890.000đ · 20 · 0 | 0.5 | Cổng vòng 1 chỉ chặn được ticket dài tốn LLM vượt trần; hoàn trùng và lỗi hãng trùng vẫn y như base, ROI −0,46 và kho HCM-B2B đắt hơn làm tay. |
 | 2 | | Sx · after | | | | | | |
 | 3 | | Sx · after | | | | | | |
 | 4 | | base · after | (kiểm không regression) | | | | | |
@@ -47,19 +47,26 @@ Chạy **trước khi sửa bất cứ thứ gì**:
 python3 -m lab10.grade --incident Sx
 ```
 
-- Mã lần chạy grade: `__________` · base: `__________` · prepared: `__________`
-- Cổng vòng 1 đỡ được ô / con số nào (so cột base với cột prepared): …
-- Khối kinh doanh và vận hành còn dòng nào vượt trần: …
+- Mã lần chạy grade: `R-S5-grade-20261119-161957-c48046` · base: `R-S5-before-20261119-161957-c48046` · prepared: `R-S5-prepared-20261119-161957-c48046`
+- Cổng vòng 1 đỡ được ô / con số nào (so cột base với cột prepared):
+  - **Đỡ được:** tiền LLM ticket đắt nhất **2.412đ → 668đ** (trần 1.500đ), nhờ `business.cost_budget_per_ticket_vnd` = 1.200đ (B7.4): ticket dài bất thường (`S5-50`, `S5-70`, khách dán cả danh sách hàng, hơn 5.000 ký tự) bị chuyển người trước khi cho máy đọc. Dòng "có ticket tốn 2.412đ tiền LLM > trần 1.500đ" biến mất; chi phí kho HCM-B2B giảm 11.326đ → 10.382đ. Ba chỉ số an toàn trên gói sự cố vẫn 0 lộ dữ liệu (cổng 3, cổng pháp lý).
+  - **Không đỡ được:** hoàn sai **890.000đ** và **20 lỗi hãng oan** giữ nguyên, `pass_rate`/`pass_k` 0,8333 giữ nguyên (hỏng `S5-02`, `S5-03`, `S5-05`, `S5-20`, `S5-21`, cả 5 seed). Cổng 1–2 so từng ticket với tracking DB, nhưng không đọc sổ cái xem đơn đã được hoàn chưa, nên đơn hoàn lần hai, lần ba vẫn lọt; trần ngày 800.000đ không chạm vì tổng hoàn tự động một ngày chỉ 196.000đ.
+  - **Xấu đi:** tỉ lệ chuyển người 0,4 → 0,5, chi phí mỗi ticket 6.083đ → 7.504đ, ROI −0,33 → −0,46, vì ticket dài bị chuyển người (mỗi ca 10.000đ công duyệt) và người trực thứ hai (phí giữ chỗ 30.000đ/ca, B7.5).
+- Khối kinh doanh và vận hành còn dòng nào vượt trần: **"ROI −0,46 < ngưỡng bàn đặt 0,5"** và **"kho HCM-B2B: mỗi ticket tốn 10.382đ > làm tay 10.000đ"**. Ngưỡng đã ký chưa đạt trên gói sự cố: `pass_rate` (0,8333 < 0,96), `pass_k` (0,8333 < 0,86), `wrongful_refund_vnd` (890.000 > 0), `wrongful_carrier_faults` (20 > 0), `cost_per_ticket_vnd` (7.504 > 6.000), `roi` (−0,46 < 0,5). Hàng chờ không ùn (0 ca, chờ lâu nhất 0 phút), lộ dữ liệu 0. Report: "KHÔNG đủ căn cứ để chọn 'Tiếp tục'".
 
 **Mở lại pre-mortem (Phiếu B mục B6), viết bằng bút khác màu.** Với thẻ S1, S3, S4, S5 đây là một phần của phần riêng theo thẻ.
 
-- Sự cố trên thẻ thuộc lăng kính nào (kỹ thuật, kinh doanh, con người và vận hành, pháp lý)? …
-- Có nằm trong các lý do bàn đã viết không? Nếu có: cổng vòng 1 đã đỡ được bao nhiêu (đọc cột prepared trong report)? Nếu không: vì sao cả bàn không nghĩ tới? …
+- Sự cố trên thẻ thuộc lăng kính nào (kỹ thuật, kinh doanh, con người và vận hành, pháp lý)? *(bút khác màu)* **Kinh doanh** là chính: CFO hỏi lời hay lỗ, và ba dòng tiền đều lỗ (tiền máy ở ticket dài, công người ở kho sỉ, tiền mất do hoàn trùng). Kèm **kỹ thuật** (trợ lý không đọc sổ cái trước khi hoàn) và **con người và vận hành** (CSKH hoàn tay qua tổng đài, `ledger_seed` `T-CSKH-2520`, mà trợ lý không biết: hai bên cùng ghi một sổ, chưa rõ ai là chủ). Pháp lý chỉ dính phần lỗi hãng ghi trùng (hãng GHSH, VNX bị phạt hai lần cho một kiện).
+- Có nằm trong các lý do bàn đã viết không? Nếu có: cổng vòng 1 đã đỡ được bao nhiêu (đọc cột prepared trong report)? Nếu không: vì sao cả bàn không nghĩ tới? *(bút khác màu)* **Một phần.** B6 dòng 3 ("chi phí vượt 6.000đ, Finance thấy không rẻ hơn làm tay") đúng triệu chứng, nhưng bàn gán nguyên nhân cho REFUND-v4, không phải kho sỉ và ticket dài; cổng tương ứng (`cost_budget_per_ticket_vnd`) chỉ đỡ được phần tiền LLM. B6 dòng 4 ("hoàn sai hàng loạt mà không có trần") có trần 800.000đ/ngày, nhưng hoàn trùng nhỏ lẻ (20.000–25.000đ mỗi lần) không bao giờ chạm trần. **Không nghĩ tới:** (1) hoàn trùng cho cùng một đơn, vì bộ nền mỗi đơn chỉ có một ticket; (2) kho sỉ HCM-B2B luôn vượt hạn mức tự động, vì bộ nền không có ticket nào của kho này, nên nhận định ở B7.4 "không kho nào tốn hơn làm tay" chỉ đúng trên bộ nền; (3) người trực thứ hai làm ROI tụt khi lượng ticket nhỏ.
 - Lý do còn thiếu, thêm bây giờ:
 
 | Lý do thất bại (viết ở thì quá khứ) | Lăng kính | Kiểm được bằng gì (trace / data / config nào) |
 |---|---|---|
-| | | |
+| Khách nhắn lại hai, ba lần cho cùng một đơn và lần nào trợ lý cũng hoàn, ghi thêm một lỗi hãng; chị Oanh phát hiện khi đối soát tuần, tiền đã mất. | Kỹ thuật · Kinh doanh | `S5-01@11` → `S5-02@11` → `S5-03@11` cùng đơn `O-2501`; sổ cái có nhiều dòng `issue_refund` cùng `order_id`; `ledger_rows(order_id=...)` trong `lab10/helpers.py`; report: `wrongful_refund_vnd` 890.000, `wrongful_carrier_faults` 20 |
+| CSKH đã hoàn tay qua tổng đài, trợ lý không biết và hoàn thêm lần nữa. | Con người và vận hành | `incidents/S5/world_patch.json` → `ledger_seed` (`T-CSKH-2520`, đơn `O-2520`); `S5-20@11` |
+| Ở kho sỉ HCM-B2B, ticket nào trợ lý cũng đọc xong rồi chuyển người vì vượt hạn mức tự động, nên LogiX trả cả tiền máy lẫn công người, đắt hơn làm tay. | Kinh doanh | `S5-51@11` dừng ở `proposal` 230.000đ rồi `escalated`; `policies[].auto_limit_vnd` 200.000đ; `warehouses` → HCM-B2B "giá trị mỗi đơn từ 2 triệu"; khối theo kho: HCM-B2B 10.382đ > 10.000đ; `business.pilot_scope` |
+| Khách dán cả danh sách hàng vào ticket, mỗi ticket tốn tiền LLM gấp ba, bốn lần ticket thường. | Kinh doanh · Kỹ thuật | `cost_vnd` ở sự kiện `result` của `S5-50`, `S5-70` (độ dài hơn 5.000 ký tự); `ops_facts.llm_cost.extract_per_4_chars_vnd`; `business.cost_budget_per_ticket_vnd` |
+| Bàn thêm người trực thứ hai cho chắc, nhưng lượng ticket chưa đủ lớn nên phí giữ chỗ đẩy ROI xuống dưới ngưỡng đã ký. | Con người và vận hành · Kinh doanh | `operations.reviewers_on_shift` = 2; `ops_facts.reviewer_standby_fee_vnd` 30.000đ/ca; ROI bộ nền 1,34 → 0,77 (base → prepared), gói S5 −0,46 |
 
 ---
 
