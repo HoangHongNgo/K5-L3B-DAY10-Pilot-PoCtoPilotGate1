@@ -70,6 +70,19 @@ def write_gate(ctx, action):
             return Verdict.escalate(
                 f"hoàn {action['amount_vnd']}đ vượt quyền lợi {owed}đ theo DB")
 
+        # Cổng 4 (vòng 2, thẻ S5): tính quyền lợi TÍCH LŨY. Sổ cái đã có khoản hoàn cho đơn này
+        # (trợ lý hoặc CSKH hoàn tay) thì chỉ được hoàn phần còn lại; hết thì chuyển người kiểm.
+        paid = sum(r["amount_vnd"] for r in ctx.tools.ledger_rows(order_id=action["order_id"]))
+        if paid:
+            remaining = owed - paid
+            ctx.log("guard_cumulative_refund", order_id=action["order_id"],
+                    owed=owed, already=paid, asked=action["amount_vnd"])
+            if remaining <= 0:
+                return Verdict.escalate(
+                    f"đơn {action['order_id']} đã hoàn {paid}đ, bằng hoặc hơn quyền lợi {owed}đ, chuyển người kiểm")
+            if action["amount_vnd"] > remaining:
+                return Verdict.modify(f"chỉ hoàn phần còn lại {remaining}đ", amount_vnd=remaining)
+
     # Cổng 2: chỉ ghi lỗi hãng khi DB xác nhận trễ thật, có nguyên nhân hợp lệ
     if tool == "file_carrier_fault":
         facts = _db_facts(ctx, action)

@@ -76,33 +76,33 @@ python3 -m lab10.trace --suite Sx --ticket <ID> --seed 11
 Ba loại lỗi: **giới hạn của hệ thống** · **lỗi ngữ cảnh** · **lỗi chìm** (cả người dùng lẫn hệ thống đều không nhận ra; nguy hiểm nhất,
 người chịu hại thường là bên thứ ba). Định nghĩa đầy đủ và ví dụ: Phiếu B mục B2.
 
-**Tác hại của thẻ:** cho ai `____` · đo bằng gì `____` · bao nhiêu ở mốc base `____`
+**Tác hại của thẻ:** cho ai `Giám đốc tài chính / Finance (tiền hoàn mất thật, chi phí cao), hãng vận chuyển (bị ghi lỗi oan)` · đo bằng gì `wrongful_refund_vnd, lỗi hãng oan, chi phí mỗi ticket theo kho, ROI` · bao nhiêu ở mốc base `hoàn sai 178.000đ, 20 lỗi hãng oan, ROI -0.33, chi phí 6.083đ/ticket (HCM-B2B 11.326đ > làm tay 10.000đ), LLM đắt nhất 2.412đ > trần 1.500đ` (mã base `R-S5-before-20261119-161957-c48046`)
 
 ### Phần 1 · Ghi lỗi (bằng chứng là mã ticket@seed và dòng trace, không tả chung chung)
 
 | # | Lỗi: người ta thấy gì (dán dòng trace / sổ cái) | Ai gặp, ai chịu | Hệ trọng (thấp / cao) | Loại lỗi (giới hạn hệ thống / ngữ cảnh / chìm) |
 |---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
-| 3 | | | | |
+| 1 | `S5-02@11`: đơn `O-2501` đã hoàn 25.000đ ở `S5-01`, khách nhắn lại "lần nữa", trợ lý lại `issue_refund` 25.000đ (`approval_id: null`) và `file_carrier_fault` GHSH lần hai. Nhãn `denied`, hoàn 0đ. Sổ cái: `S5-02 · O-2501 · 25000`. | LogiX mất 25.000đ; hãng GHSH bị ghi lỗi trùng; khách không thấy gì sai | cao (tiền mất thật, lỗi hãng oan) | chìm |
+| 2 | `S5-20@11`: `ledger_seed` đã có `T-CSKH-2520` (CSKH hoàn tay 20.000đ cho `O-2520`), khách nhắn "hôm qua gọi tổng đài"; trợ lý hoàn thêm 20.000đ và ghi lỗi hãng VNX. Nhãn `denied`. | LogiX mất 20.000đ; hãng VNX bị ghi lỗi oan; CSKH và trợ lý không biết nhau | cao | chìm |
+| 3 | `S5-51@11`: đơn sỉ (kho HCM-B2B) tới bước `proposal` 230.000đ, rồi `escalated` "vượt hạn mức tự động" (565đ tiền LLM). Ticket `ĐẠT` nhãn nhưng mỗi ticket kho này tốn 10.382đ so với làm tay 10.000đ (grade mã `R-S5-prepared-20261119-161957-c48046`). `S5-50` tốn LLM 1.856đ > trần 1.500đ, `S5-70` 2.018đ. | Finance: trả cả tiền LLM lẫn công người duyệt, ROI âm | cao về kinh doanh (ROI -0.46 ở prepared), thấp với khách | giới hạn của hệ thống |
 
 ### Phần 2 · Tìm nguồn (đánh dấu câu nào đúng với từng lỗi)
 
 | Câu hỏi | Lỗi 1 | Lỗi 2 | Lỗi 3 |
 |---|---|---|---|
-| **Đầu vào:** hệ thống có tự diễn giải / sửa đầu vào của người dùng theo cách họ không lường? Có đặt sai trọng số cho một lời nói hay tín hiệu của người dùng? | | | |
-| **Độ liên quan:** hệ thống có thiếu dữ liệu cần để quyết đúng? Dữ liệu vào có nhiễu, thiếu ổn định? | | | |
-| **Thứ bậc hệ thống:** có hai hệ thống cùng ghi / cùng theo dõi một thứ mà không rõ bên nào là chủ (ví dụ CSKH hoàn tay và trợ lý cùng ghi sổ)? | | | |
-| **Trạng thái hỏng:** nhiều lỗi cộng lại có làm tính năng không dùng được (ví dụ LLM lỗi liên tiếp)? | | | |
+| **Đầu vào:** hệ thống có tự diễn giải / sửa đầu vào của người dùng theo cách họ không lường? Có đặt sai trọng số cho một lời nói hay tín hiệu của người dùng? | ✘ Không: ticket chỉ nói "lần nữa", trợ lý không dựa vào lời khách | ✘ Không | ✘ Không |
+| **Độ liên quan:** hệ thống có thiếu dữ liệu cần để quyết đúng? Dữ liệu vào có nhiễu, thiếu ổn định? | ✔ Quyết định chỉ nhìn tracking và chính sách, **không nhìn sổ cái**: thiếu thông tin "đơn này đã hoàn chưa" | ✔ Cùng thiếu: không nhìn dòng hoàn tay trong `ledger_seed` | ✘ Đủ dữ liệu; vấn đề là tính kinh tế, không phải thiếu dữ liệu |
+| **Thứ bậc hệ thống:** có hai hệ thống cùng ghi / cùng theo dõi một thứ mà không rõ bên nào là chủ (ví dụ CSKH hoàn tay và trợ lý cùng ghi sổ)? | ✘ Cả hai khoản hoàn đều do trợ lý | ✔ **CSKH hoàn tay và trợ lý cùng ghi sổ**, không bên nào biết bên kia | ✘ Không |
+| **Trạng thái hỏng:** nhiều lỗi cộng lại có làm tính năng không dùng được (ví dụ LLM lỗi liên tiếp)? | ✘ Không | ✘ Không | ✔ Ticket kho sỉ luôn chuyển người, nên tiền LLM cộng công duyệt làm cả kho đắt hơn làm tay; cộng với ticket dài tốn LLM vượt trần, ROI toàn pilot âm |
 
 ### Phần 3 · Hướng xử lý (mỗi lỗi một ô)
 
 | | Lỗi 1 | Lỗi 2 | Lỗi 3 |
 |---|---|---|---|
-| Vì sao người gặp coi đây là lỗi | | | |
-| Kiểu giải pháp: phản hồi cho người dùng / trao quyền kiểm soát cho người / khác | | | |
-| Đường đi của người sau khi có giải pháp (ví dụ: ticket chuyển sang người duyệt → duyệt → khách được trả lời) | | | |
-| Hệ thống học được gì (tín hiệu ghi lại để theo dõi: tên metric trong `monitors.py`) | | | |
+| Vì sao người gặp coi đây là lỗi | Chị Oanh (đối soát) thấy một đơn hoàn hai lần; tiền mất thật, hãng thấy lỗi giao ghi trùng | Cùng đơn vừa được CSKH hoàn tay vừa được trợ lý hoàn: Finance mất tiền, hãng bị ghi lỗi oan | Finance không ký được vì mỗi ticket kho sỉ đắt hơn làm tay, ROI âm |
+| Kiểu giải pháp: phản hồi cho người dùng / trao quyền kiểm soát cho người / khác | Trao quyền cho người + cổng cứng: hoàn theo quyền lợi tích lũy trong sổ cái, hết quyền lợi thì chuyển người | Như lỗi 1 (cổng đọc cả dòng hoàn tay trong sổ cái) | Khác: **config kinh doanh** (phạm vi pilot, ngân sách mỗi ticket), không phải sửa model |
+| Đường đi của người sau khi có giải pháp (ví dụ: ticket chuyển sang người duyệt → duyệt → khách được trả lời) | Đơn đã hoàn đủ → ticket chuyển người duyệt → người đối chiếu sổ → từ chối hoặc hoàn phần còn lại → khách được trả lời | Cùng đường; phần chưa hoàn (nếu có) được hoàn đúng phần còn lại | Ticket kho sỉ không đi qua trợ lý mà vào thẳng người duyệt, tránh trả tiền LLM vô ích |
+| Hệ thống học được gì (tín hiệu ghi lại để theo dõi: tên metric trong `monitors.py`) | Đếm sự kiện `guard_cumulative_refund` mỗi ngày (số lần cổng chạm vào đơn đã hoàn); metric mới trong `monitors.py` | Cùng tín hiệu, tách theo `basis: manual` để thấy mức chồng chéo giữa CSKH và trợ lý | Chi phí mỗi ticket theo kho, ROI mỗi ngày |
 
 Yêu cầu: ít nhất **hai lỗi có nguồn khác nhau** ở phần 2, và ít nhất một lỗi được xếp đúng là **lỗi chìm**.
 
