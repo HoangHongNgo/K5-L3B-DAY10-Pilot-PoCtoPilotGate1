@@ -27,10 +27,24 @@ ctx.gates    config cổng của bàn (config/operating_gates.json), chỉ đọ
 ctx.events   trace tới thời điểm này;  ctx.log("ten_su_kien", ...) ghi thêm sự kiện guard vào trace
 lab10.helpers: db_delay_days, ticket_parcel, effective_policy, entitlement_vnd, carrier_at_fault, digits
 
-Mặc định dưới đây cho qua tất cả (= mốc base).
+Vòng 1 của bàn Pilot: 3 cổng (hoàn tiền theo DB, lỗi hãng theo DB, không gửi PII cho hãng).
 """
 from . import helpers as H  # noqa: F401
 from .tools import Verdict
+
+# Các trường không được đưa cho bên thứ ba, gộp với config legal.
+_PII_DEFAULT = {"customer_note", "district", "customer_id", "phone", "address"}
+
+
+def _db_facts(ctx, action):
+    """Số liệu từ nguồn sự thật (DB), không đọc chữ của khách."""
+    order = ctx.tools.lookup_order(action["order_id"])
+    if not order:
+        return None
+    parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
+    delay = H.db_delay_days(parcel, ctx.as_of)
+    policy = H.effective_policy(ctx.tools.lookup_policies(), ctx.as_of)
+    return order, parcel, delay, policy
 
 
 def pre_guard(ctx):
@@ -39,4 +53,41 @@ def pre_guard(ctx):
 
 def write_gate(ctx, action):
     # action = {"tool": "issue_refund", "ticket_id":..., "order_id":..., "amount_vnd":..., "payer":..., ...}
+    tool = action["tool"]
+
+    # Cổng 1: tiền hoàn không vượt quyền lợi tính từ DB; vượt thì chuyển người duyệt
+    if tool == "issue_refund" and not action.get("approval_id"):
+        facts = _db_facts(ctx, action)
+        if facts is None:
+            return Verdict.escalate("không tra được đơn trong DB")
+        order, parcel, delay, policy = facts
+        if policy is None:
+            return Verdict.escalate("không có chính sách hiệu lực")
+        owed = H.entitlement_vnd(policy, order, delay, parcel.get("delay_cause"))
+        if action["amount_vnd"] > owed:
+            ctx.log("guard_refund_over_entitlement",
+                    asked=action["amount_vnd"], owed=owed, db_delay=delay)
+            return Verdict.escalate(
+                f"hoàn {action['amount_vnd']}đ vượt quyền lợi {owed}đ theo DB")
+
+    # Cổng 2: chỉ ghi lỗi hãng khi DB xác nhận trễ thật, có nguyên nhân hợp lệ
+    if tool == "file_carrier_fault":
+        facts = _db_facts(ctx, action)
+        if facts is None:
+            return Verdict.deny("không tra được đơn trong DB")
+        order, parcel, delay, policy = facts
+        if policy is None or not H.carrier_at_fault(policy, parcel, delay):
+            return Verdict.deny("DB không xác nhận lỗi hãng (số ngày hoặc nguyên nhân)")
+        if action.get("delay_days") != delay:
+            return Verdict.modify("ghi theo số ngày DB", delay_days=delay)
+
+    # Cổng 3: không gửi dữ liệu cá nhân cho hãng
+    if tool == "notify_carrier":
+        blocked = _PII_DEFAULT | set(
+            ctx.gates.get("legal", {}).get("pii_fields_blocked_to_third_party", []))
+        payload = action.get("payload", {})
+        clean = {k: v for k, v in payload.items() if k not in blocked}
+        if clean != payload:
+            return Verdict.modify("bỏ trường cá nhân khỏi tin gửi hãng", payload=clean)
+
     return Verdict.allow()
