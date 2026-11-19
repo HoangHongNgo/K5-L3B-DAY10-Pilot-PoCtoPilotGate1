@@ -32,7 +32,7 @@ Mỗi lệnh `lab10.eval` và `lab10.grade` tự ghi một dòng vào `runs/jour
 |---|---|---|---|---|---|---|---|---|
 | 1 | `R-S5-prepared-20261119-161957-c48046` | S5 · prepared | nhận thẻ đã bốc, chưa sửa thêm (đúng cổng vòng 1 đã chốt) | 0.8333 [0.7, 0.9667] | 0.8333 | 890.000đ · 20 · 0 | 0.5 | Cổng vòng 1 chỉ chặn được ticket dài tốn LLM vượt trần; hoàn trùng và lỗi hãng trùng vẫn y như base, ROI −0,46 và kho HCM-B2B đắt hơn làm tay. |
 | 2 | | Sx · after | | | | | | |
-| 3 | | Sx · after | | | | | | |
+| 3 | `R-S5-after-20261119-170621-e86e61` | S5 · after | `business.pilot_scope`: bỏ kho sỉ HCM-B2B (giữ HN, HCM, DN, CT); ticket HCM-B2B về làm tay | 1.0 [1.0, 1.0] | 1.0 | 0đ · 0 · 0 | 0.3889 | Hết dòng "kho HCM-B2B đắt hơn làm tay", ROI 0,13 → 0,27, độ phủ 0,6; còn ROI < 0,5 và chi phí 7.847đ > 6.000đ do phí giữ chỗ 2 người trực. Bộ nền kiểm lại `R-base-after-20261119-170626-e86e61`: pass_rate 1,0, không vượt trần. |
 | 4 | | base · after | (kiểm không regression) | | | | | |
 
 ---
