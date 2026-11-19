@@ -1,12 +1,16 @@
 {
-  "team": "",
-  "members": [],
-  "incident": "",
-  "decision_v1": "",
-  "decision_v2": "",
+  "team": "K5-L3B-DAY10-Pilot-PoCtoPilotGate1",
+  "members": [
+    "NgoHongHoang-2A202604093",
+    "DoHongVy-2A202604107",
+    "NguyenQuangThanh-2A202604085"
+  ],
+  "incident": "S5",
+  "decision_v1": "Tiếp tục",
+  "decision_v2": "Thu hẹp",
   "three_lines": {
-    "environment_assumption": "",
-    "reduce_or_prevent": "",
-    "measure_in_pilot": ""
+    "environment_assumption": "Thiết kế giả định mọi khoản hoàn tay từ CSKH được ghi kịp thời vào cùng ledger theo order_id.",
+    "reduce_or_prevent": "Gate chặn hoàn trùng và lỗi hãng oan khi ledger đầy đủ; ledger thiếu hoặc ngoài hệ thống thì chỉ giảm rủi ro.",
+    "measure_in_pilot": "Đo hoàn trùng, lỗi hãng oan, chi phí và ROI theo kho trên giao dịch thật, đối chiếu sổ CSKH hằng ngày."
   }
 }

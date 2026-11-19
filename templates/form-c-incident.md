@@ -369,7 +369,7 @@ Ghi chú: `worst_warehouse_escalation_rate` (tỉ lệ chuyển người ở kho
 
 <a id="c9"></a>
 
-## C9 · Câu 3.7 · Fault tree SAU khi sửa (mã lần chạy: `__________`)
+## C9 · Câu 3.7 · Fault tree SAU khi sửa (mã lần chạy: `R-S5-grade-20261119-173323-c05120`)
 
 Vẽ lại cây ở C6. Ở mỗi nhánh đã xử lý, thêm một nút `VÀ [gate … hỏng]` và ghi:
 
@@ -383,9 +383,9 @@ Vẽ lại cây ở C6. Ở mỗi nhánh đã xử lý, thêm một nút `VÀ [g
 
 | Nhánh | Gate (hàm trong `guards.py` / khoá config / metric trong `monitors.py`) | Tầng gate (phát hiện / chặn / giới hạn thiệt hại / vận hành) | Giảm hay ngăn? Vì sao | Nhánh còn hở |
 |---|---|---|---|---|
-| [1] | | | | |
-| [2] | | | | |
-| [3] | | | | |
+| [1] Hoàn lần hai cho cùng đơn do không thấy lịch sử ledger | `write_gate` kiểm `ledger_rows(order_id)` trước `issue_refund` | Chặn | Ngăn hoàn trùng khi ledger đầy đủ, nhưng không thấy hoàn ngoài ledger | Ledger thiếu/đồng bộ trễ |
+| [2] Ghi lỗi hãng khi chưa có căn cứ nguyên nhân | `write_gate` yêu cầu cause ghi nhận; `legal.carrier_fault_requires_recorded_cause` | Chặn | Ngăn ghi lỗi thiếu căn cứ theo dữ liệu hiện có | Nguồn tracking sai hoặc cause bị ghi sai |
+| [3] Ticket dài vượt trần / kho sỉ vẫn tốn cả máy và công người | `business.cost_budget_per_ticket_vnd`; `duplicate_refund_rate`, `worst_warehouse_escalation_rate` | Giới hạn thiệt hại / phát hiện | Giảm chi phí LLM và phát hiện rủi ro, không loại bỏ chi phí duyệt; còn trượt ROI | Ticket ở HCM-B2B đắt hơn làm tay; ROI 0.13 < 0.5 |
 
 ---
 
@@ -395,7 +395,7 @@ Vẽ lại cây ở C6. Ở mỗi nhánh đã xử lý, thêm một nút `VÀ [g
 
 | Rủi ro | Khả năng | Tác động | Người phụ trách (PIC, một người) | Dấu hiệu (metric nào, ngưỡng nào) | Xử lý | Ảnh hưởng bước đánh giá | Nhóm chức năng (GOVERN / MAP / MEASURE / MANAGE) |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| Hoàn trùng cùng đơn hoặc CSKH và trợ lý cùng hoàn do ledger không đồng bộ | Có thể xảy ra khi ghi sổ chậm | Cao: mất tiền thật và ghi lỗi hãng oan | Nguyễn Quang Thành | `duplicate_refund_rate` > 0%: đối soát ngay; bất kỳ hoàn trùng xác nhận nào: dừng thao tác hoàn tự động | NV-TUNG khóa thao tác, NV-HANH đối chiếu ledger với CSKH, NV-OANH xử lý đính chính hãng; chỉ bật lại sau xác minh | Chưa cho qua Gate 1; cần đo pilot thật trước đánh giá 2 | MANAGE |
 
 Quy tắc: **mỗi dòng phải đổi được một quyết định.** Cột "Dấu hiệu" phải là một metric có trong `monitors.py` hoặc trong report.
 
@@ -446,28 +446,28 @@ Cột v1 nằm ở Phiếu B mục B8; không sửa cột đó.
 |---|---|
 | Commit ký tiêu chí | phải giống v1 |
 | Hash chốt cổng vòng 1 | phải giống v1 |
-| Mã lần chạy dùng làm bằng chứng | thẻ, mốc base: ________ · prepared: ________ · after: ________ |
-| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | |
-| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Khối "theo kho và hãng" trong output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | |
-| Quyết định (khoanh một) | Tiếp tục · Thu hẹp · Cải tiến thêm · Dừng |
-| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | |
-| Bằng chứng 2 | |
-| Bằng chứng 3 | |
-| Khớp dòng nào trong `decision_rule` đã ký? | |
-| Nếu Thu hẹp: cắt kho nào / còn bao nhiêu phần trăm / mấy người trực, và ticket bị cắt đi đâu | |
+| Mã lần chạy dùng làm bằng chứng | thẻ S5, base: `R-S5-before-20261119-173324-c05120` · prepared: `R-S5-prepared-20261119-173324-c05120` · after: `R-S5-after-20261119-173324-c05120` |
+| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | ROI 0.13 < 0.5; chi phí 8.861đ/ticket > 6.000đ; kho HCM-B2B 10.382đ > làm tay 10.000đ. Hàng chờ, LLM 765đ ≤ 1.500đ, hoàn sai và lỗi hãng oan 0; PII 0. |
+| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Khối "theo kho và hãng" trong output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | HCM-B2B: 10.382đ/ticket > 10.000đ làm tay; HN cũng 6.752đ/ticket. Xét riêng HCM-B2B càng không thể tiếp tục; chuyển hai phân khúc này về xử lý tay và chỉ xem xét phần còn lại sau khi đo lại. |
+| Quyết định (khoanh một) | **Thu hẹp** |
+| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | `R-S5-grade-20261119-173323-c05120`: base đạt 5 ngưỡng bắt buộc, visible sau sửa `pass_rate` 1.0, `pass_k` 1.0, wrongful refund 0, wrongful carrier 0, PII 0. |
+| Bằng chứng 2 | Visible after: 8.861đ/ticket > ngưỡng ký 6.000đ; ROI 0.13 < 0.5; HCM-B2B 10.382đ > làm tay. Không đủ căn cứ để tiếp tục cả phạm vi. |
+| Bằng chứng 3 | Hàng chờ 0, LLM tối đa 765đ ≤ 1.500đ, hoàn sai/lỗi hãng oan/PII đều 0; độ phủ còn 1.0. Có thể thu hẹp phân khúc có economics xấu và đo lại, không đóng phạm vi về 0. |
+| Khớp dòng nào trong `decision_rule` đã ký? | Thu hẹp đúng phần ticket có economics không đạt, chuyển phần cắt về làm tay; không chọn Tiếp tục khi chi phí/ROI còn trượt. Phạm vi còn lại cần được đo lại để chứng minh đủ ngưỡng trước đánh giá 2. |
+| Nếu Thu hẹp: cắt kho nào / còn bao nhiêu phần trăm / mấy người trực, và ticket bị cắt đi đâu | Tạm cắt HCM-B2B và HN (chi phí 10.382đ và 6.752đ/ticket) về CSKH làm tay; giữ 2 người trực. Tỉ lệ độ phủ sau cắt chưa được đo, phải chạy lại report cho phạm vi mới; không tuyên bố phần còn lại đã đạt Gate 1. |
 | Nếu Cải tiến thêm: giả thuyết cụ thể (nhánh nào của fault tree) + hạn | |
 | Nếu Dừng: bài học ghi lại | |
-| Ngày quyết định lại (trừ khi Dừng) | |
-| PIC ký | |
+| Ngày quyết định lại (trừ khi Dừng) | Trước Bước đánh giá 2, sau khi chạy lại S5 và base trên phạm vi còn lại |
+| PIC ký | Nguyễn Quang Thành (Vận hành và pháp lý) |
 
 **Chỉ ở v2**
-- Quyết định đổi hay giữ so với v1? Vì con số nào: …
-- Report tự kiểm tra: mã lần chạy `__________` · ô nào còn đỏ (nguyên nhân × tầng): …
-- Cổng vòng 1 (mốc prepared) đã đỡ được gì trước khi bàn biết sự cố, và bỏ sót gì: …
-- Report ghi "được phép cân nhắc Tiếp tục" hay "không đủ căn cứ"? Quyết định của bàn có khớp không: …
-- Một thứ bộ thử hôm nay chưa đo, và nó ảnh hưởng quyết định ra sao: …
+- Quyết định đổi từ **Tiếp tục** ở v1 sang **Thu hẹp** ở v2: S5 có ROI 0.13, chi phí 8.861đ/ticket và HCM-B2B 10.382đ/ticket; các ngưỡng kinh tế chưa đạt.
+- Report tự kiểm tra: `R-S5-grade-20261119-173323-c05120` · ô đỏ: visible economics; base regression đạt, nhưng prepared hiện báo checkpoint vòng 1 đã bị sửa.
+- Prepared đã chặn ticket LLM vượt trần (2.412đ xuống 668đ), nhưng bỏ sót hoàn trùng, lỗi hãng oan và economics kho sỉ.
+- Report ghi **không đủ căn cứ để chọn Tiếp tục**; Thu hẹp khớp bằng chứng vì phân khúc đắt được chuyển về làm tay, còn phạm vi còn lại phải được đánh giá lại.
+- Bộ thử mock chưa xác nhận ledger CSKH đồng bộ đầy đủ và chi phí thật theo kho; thiếu các dữ liệu này thì không thể kết luận phạm vi còn lại đạt ngưỡng trước Bước đánh giá 2.
 
 **Ba dòng bắt buộc** (chép nguyên ba câu này sang `submission/submission.json`, mục `three_lines`)
-1. Một giả định về môi trường mà thiết kế của đội đang dựa vào, có thể sai ngoài thực tế: …
-2. Gate của đội chỉ GIẢM khả năng hay thực sự NGĂN được tác hại? Vì sao: …
-3. Vì data là mock, cần đo lại gì trong pilot thật trước Bước đánh giá 2: …
+1. Một giả định về môi trường mà thiết kế của đội đang dựa vào, có thể sai ngoài thực tế: Mọi khoản hoàn tay từ CSKH được ghi kịp thời vào cùng ledger theo order_id.
+2. Gate của đội chỉ GIẢM khả năng hay thực sự NGĂN được tác hại? Vì sao: Gate chặn hoàn trùng và lỗi hãng oan khi ledger đầy đủ; ledger thiếu hoặc ngoài hệ thống thì chỉ giảm rủi ro.
+3. Vì data là mock, cần đo lại gì trong pilot thật trước Bước đánh giá 2: Đo hoàn trùng, lỗi hãng oan, chi phí và ROI theo kho trên giao dịch thật, đối chiếu sổ CSKH hằng ngày.
