@@ -81,26 +81,26 @@ Ba loại lỗi:
 
 | # | Lỗi: người ta thấy gì (dán dòng trace / sổ cái) | Ai gặp, ai chịu | Hệ trọng (thấp / cao) | Loại lỗi (giới hạn hệ thống / ngữ cảnh / chìm) |
 |---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
+| 1 | `T-002@55` bước 06: `issue_refund` 20.000đ, `payer: LOGIX`, `approval_id: null`. Sổ cái có 1 dòng hoàn, trong khi nhãn là `denied`, hoàn 0đ. Bước 03 `model_override`: DB ghi trễ 2 ngày, ticket khai 5, mô hình dùng 5 (`delay_days_used: 5`). | LogiX chịu mất 20.000đ; khách nhận tiền mà không thấy gì sai | cao (tiền ra, không có người duyệt) | chìm |
+| 2 | `T-002@55` bước 07: `file_carrier_fault` hãng VNX, tài xế `TX-VNX-03`, `delay_days: 5` (thật là 2). Bước 08 `notify_carrier` gửi cho hãng bản khai 5 ngày của khách. Nhãn: `faults: []`. | Hãng VNX và tài xế bị ghi lỗi oan, còn khách và LogiX không thấy | cao (ảnh hưởng quan hệ hãng, đối soát tiền hãng) | chìm |
 
 ### Phần 2 · Tìm nguồn (đánh dấu câu nào đúng với từng lỗi)
 
 | Câu hỏi | Lỗi 1 | Lỗi 2 |
 |---|---|---|
-| **Đầu vào:** hệ thống có tự diễn giải / sửa đầu vào của người dùng theo cách họ không lường? Có đặt sai trọng số cho một lời nói hay tín hiệu của người dùng? | | |
-| **Độ liên quan:** hệ thống có thiếu dữ liệu cần để quyết đúng? Dữ liệu vào có nhiễu, thiếu ổn định? | | |
-| **Thứ bậc hệ thống:** có hai hệ thống cùng ghi / cùng theo dõi một thứ mà không rõ bên nào là chủ (ví dụ CSKH hoàn tay và trợ lý cùng ghi sổ)? | | |
-| **Trạng thái hỏng:** nhiều lỗi cộng lại có làm tính năng không dùng được (ví dụ LLM lỗi liên tiếp)? | | |
+| **Đầu vào:** hệ thống có tự diễn giải / sửa đầu vào của người dùng theo cách họ không lường? Có đặt sai trọng số cho một lời nói hay tín hiệu của người dùng? | ✔ Tin lời khách (5 ngày, `trust_claim: true`) hơn tracking (2 ngày); `model_override` ghi đè DB | ✔ Cùng gốc: con số 5 ngày được dùng cho cả lỗi hãng và tin gửi hãng |
+| **Độ liên quan:** hệ thống có thiếu dữ liệu cần để quyết đúng? Dữ liệu vào có nhiễu, thiếu ổn định? | ✘ Đủ dữ liệu: DB có sẵn `db_delay_days: 2`, `cause_recorded: true` | ✘ Tương tự, DB đủ |
+| **Thứ bậc hệ thống:** có hai hệ thống cùng ghi / cùng theo dõi một thứ mà không rõ bên nào là chủ (ví dụ CSKH hoàn tay và trợ lý cùng ghi sổ)? | ✔ Tracking (DB) và lời khai trên ticket cùng nói về số ngày trễ, chưa quy định bên nào là nguồn sự thật | ✔ Tương tự |
+| **Trạng thái hỏng:** nhiều lỗi cộng lại có làm tính năng không dùng được (ví dụ LLM lỗi liên tiếp)? | ✘ Không: LLM trích xuất chạy bình thường | ✘ Không |
 
 ### Phần 3 · Hướng xử lý (mỗi lỗi một ô)
 
 | | Lỗi 1 | Lỗi 2 |
 |---|---|---|
-| Vì sao người gặp coi đây là lỗi | | |
-| Kiểu giải pháp: phản hồi cho người dùng / trao quyền kiểm soát cho người / khác | | |
-| Đường đi của người sau khi có giải pháp (ví dụ: ticket chuyển sang người duyệt → duyệt → khách được trả lời) | | |
-| Hệ thống học được gì (tín hiệu ghi lại để theo dõi: tên metric trong `monitors.py`) | | |
+| Vì sao người gặp coi đây là lỗi | Chính sách chỉ hoàn khi tracking xác nhận trễ đủ ngày; tracking ghi 2 ngày nên không đủ điều kiện, mà tiền vẫn ra không qua người duyệt | Hãng đối chiếu với sổ giao của họ (2 ngày), thấy bị ghi lỗi 5 ngày và bị gửi thông tin sai, nên không chấp nhận |
+| Kiểu giải pháp: phản hồi cho người dùng / trao quyền kiểm soát cho người / khác | Trao quyền cho người: số khai khác tracking thì không tự hoàn, chuyển người duyệt | Trao quyền cho người, cộng quy tắc khác: chỉ ghi lỗi hãng bằng số ngày trong DB và khi `cause_recorded` đúng |
+| Đường đi của người sau khi có giải pháp (ví dụ: ticket chuyển sang người duyệt → duyệt → khách được trả lời) | Ticket có lệch số ngày → hàng chờ người duyệt → người duyệt đối chiếu tracking → từ chối hoặc hoàn theo số DB → khách được trả lời | Cùng ticket: người duyệt quyết định có ghi lỗi hãng không, và ghi theo số ngày DB; chưa duyệt thì không gửi hãng |
+| Hệ thống học được gì (tín hiệu ghi lại để theo dõi: tên metric trong `monitors.py`) | Đếm sự kiện `model_override` mỗi ngày (tỉ lệ ticket mà số khách khai bị dùng thay số DB) | Đếm số lỗi hãng ghi mà số ngày lệch DB (ví dụ `carrier_fault_mismatch`), kèm `wrongful_carrier_faults` đo hằng ngày |
 
 **Ví dụ (bộ nền, đừng chép):** `T-002@55` · sổ cái có dòng hoàn 20.000đ, hãng VNX nhận một lỗi, trong khi tracking ghi trễ 2 ngày ·
 khách không thấy gì sai, hãng chịu · cao · **lỗi chìm**. Nguồn: đầu vào (đặt sai trọng số cho con số khách tự khai). Xử lý:
