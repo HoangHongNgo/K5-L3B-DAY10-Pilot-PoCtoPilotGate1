@@ -336,7 +336,7 @@ Phần 1–3 và mục Giờ cao điểm viết ở vòng 1. Phần 4–5 viết
 | Người giữ công tắc tắt từng thao tác ghi | Lê Thanh Tùng (`NV-TUNG`) | Tắt `issue_refund`, `file_carrier_fault`, `notify_carrier`, `send_reply` theo phạm vi sự cố | Kênh trực vận hành pilot |
 | Người nhận khiếu nại của bên thứ ba (hãng, shop, người nhận quà) | Phạm Kiều Oanh (`NV-OANH`) | Đối soát, tiếp nhận khiếu nại và phối hợp đính chính với hãng/shop | Kênh trực vận hành pilot |
 
-Số người trực duyệt mỗi ca: **3** · Mỗi giờ duyệt được: **18 ca** (3 × 6 theo `ops_facts`) · Phạm vi pilot: **tất cả kho** theo `business.pilot_scope.mode: all`; không tự mở rộng ngoài phạm vi được duyệt.
+Số người trực duyệt mỗi ca: **2** · Mỗi giờ duyệt được: **12 ca** (2 × 6 theo `ops_facts`) · Phạm vi pilot: **tất cả kho** theo `business.pilot_scope.mode: all`; không tự mở rộng ngoài phạm vi được duyệt.
 
 #### Runbook 2 · Nhìn con số nào, ngưỡng nào thì làm gì
 
@@ -367,11 +367,11 @@ Lượng ticket có thể dồn gấp ba trong một giờ (ngày sale, sau bão
 
 | Câu hỏi | Trả lời (có số, có tên) |
 |---|---|
-| Giờ cao điểm là khi nào, bao nhiêu ticket mỗi giờ (dựa vào `ops_facts`)? | Ngày sale/sau bão, lập tình huống tải gấp 3 mức năng lực của 1 người: **18 ca/giờ** (6 ca/giờ/người × 3 theo `ops_facts`). Đối chiếu số đến thực tế mỗi giờ trong report; đây là mức stress để xếp ca, không phải số đo base. |
-| Ai trực giờ cao điểm, mấy người (khớp `operations.reviewers_on_shift`)? | **3 người duyệt/ca**, tổng năng lực **18 ca/giờ**: NV-HANH phụ trách ca và 2 người trực được điều phối bởi NV-TUNG; config đặt `reviewers_on_shift: 3`, `review_capacity_per_hour: 18`. |
-| Ngưỡng nào thì **gọi thêm người** (hàng chờ bao nhiêu ca, chờ lâu nhất bao nhiêu phút)? Ai gọi? | Khi hàng chờ ≥6 ca hoặc thời gian chờ >30 phút, NV-TUNG gọi thêm người dự phòng; nếu chờ chạm **60 phút** (SLA), dừng nhận tự động ca mới cho đến khi hàng chờ giảm. |
-| Ngưỡng nào thì **thu hẹp** phạm vi (khoá `business.pilot_scope`) hoặc **tắt** một thao tác ghi (`config/switches.json`)? Ai quyết? | Nếu dự báo >18 ca/giờ hoặc queue ≥6 ca dù đã đủ 3 người, NV-TUNG đề xuất VỸ thu hẹp `business.pilot_scope`; khi có hoàn sai thì tắt `issue_refund`, lỗi hãng sai thì tắt `file_carrier_fault`, PII leak thì tắt `notify_carrier`. NV-TUNG thực hiện ngay để cô lập rủi ro. Nếu phải gọi thêm người ngoài 3 người đã bố trí, PIC cập nhật `reviewers_on_shift`/`review_capacity_per_hour` trước khi tiếp tục. |
-| Thêm người thì chi phí mỗi ticket và ROI thay đổi thế nào (đọc report)? | So với 1 người mặc định, thêm 2 người tốn **60.000đ/ca** (2 × 30.000đ standby theo `ops_facts`); cộng chi phí này làm `cost_per_ticket_vnd` tăng và `roi` giảm. Chia 60.000đ cho số ticket/ngày trong report để tính phần tăng/ticket; xác nhận lại bằng eval trước khi duy trì lịch 3 người. |
+| Giờ cao điểm là khi nào, bao nhiêu ticket mỗi giờ (dựa vào `ops_facts`)? | Ngày sale/sau bão, stress case tải gấp 3 năng lực của 1 người: **18 ca/giờ** (6 ca/giờ/người × 3 theo `ops_facts`). Base chỉ có khoảng **5,2 ca/ngày** vào hàng chờ; 18 ca/giờ là kịch bản dồn tải, không phải số đo base. |
+| Ai trực giờ cao điểm, mấy người (khớp `operations.reviewers_on_shift`)? | Chọn **2 người duyệt/ca**, năng lực **12 ca/giờ**: Trần Thị Hạnh (`NV-HANH`) và Lê Thanh Tùng (`NV-TUNG`); config đặt `reviewers_on_shift: 2`, `review_capacity_per_hour: 12`. NV-TUNG gọi Phạm Kiều Oanh (`NV-OANH`) làm người dự phòng thứ ba khi ngưỡng đạt; nếu được bổ sung thường trực, cập nhật config thành 3 người/18 ca/giờ trước khi tiếp tục pilot. Hai người đáp ứng hai ngưỡng kinh doanh đã ký và cho dư địa trên tải thực tế 5,2 ca/ngày; người dự phòng dành cho burst cao điểm. |
+| Ngưỡng nào thì **gọi thêm người** (hàng chờ bao nhiêu ca, chờ lâu nhất bao nhiêu phút)? Ai gọi? | Khi hàng chờ **≥6 ca** hoặc chờ lâu nhất **>30 phút**, NV-TUNG gọi một người dự phòng (năng lực tổng thành 18 ca/giờ). Nếu chờ chạm **60 phút** (SLA) hoặc `queue_stuck > 0`, dừng tự động nhận ca cần duyệt và xử lý thủ công cho đến khi backlog giảm. |
+| Ngưỡng nào thì **thu hẹp** phạm vi (khoá `business.pilot_scope`) hoặc **tắt** một thao tác ghi (`config/switches.json`)? Ai quyết? | Nếu tải vượt 12 ca/giờ kéo dài mà chưa có người dự phòng, hoặc hàng chờ ≥6 ca dù đã gọi, NV-TUNG đề xuất VỸ thu hẹp `business.pilot_scope`; khi có hoàn sai thì tắt `issue_refund`, lỗi hãng sai thì tắt `file_carrier_fault`, PII leak thì tắt `notify_carrier`. NV-TUNG thực hiện ngay để cô lập rủi ro. |
+| Thêm người thì chi phí mỗi ticket và ROI thay đổi thế nào (đọc report)? | Hai người trực tốn **60.000đ/ca** (2 × 30.000đ standby); so với phương án một người mặc định, tăng thêm **30.000đ/ca**. Phần tăng làm `cost_per_ticket_vnd` tăng và `roi` giảm; chia 30.000đ cho số ticket/ngày trong report để ước tính phần tăng/ticket. Chỉ duy trì người dự phòng khi tải cao điểm cần thiết và xác nhận lại bằng eval. |
 
 ---
 

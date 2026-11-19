@@ -9,8 +9,8 @@
   "operations": {
     "pic": "NV-TUNG",
     "approver_id": "NV-HANH",
-    "reviewers_on_shift": 3,
-    "review_capacity_per_hour": 18,
+    "reviewers_on_shift": 2,
+    "review_capacity_per_hour": 12,
     "max_queue_wait_minutes": 60,
     "stop_conditions": [
       "Dừng tự động nhận ca chuyển người nếu queue_wait_max_min đạt 60 phút hoặc queue_stuck lớn hơn 0; giữ ticket cho CSKH xử lý thủ công.",
