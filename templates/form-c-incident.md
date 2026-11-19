@@ -227,8 +227,10 @@ Mở lại Phiếu B mục B3. Ghi ở đây những dòng đổi so với vòng
 
 | Trường / bảng | Vòng 1 bàn đã coi là (nguồn sự thật / bản sao / chưa hỏi) | Sau khi đọc thẻ thì thấy | Ảnh hưởng tới tiền hay lỗi hãng thế nào |
 |---|---|---|---|
-| | | | |
-| | | | |
+| Sổ cái (`ledger_seed` và các dòng `issue_refund` đã ghi) | **Chưa hỏi**: B3 chỉ liệt kê là "dữ liệu đọc", không coi là trường then chốt; cổng vòng 1 không đọc nó | Là **nguồn sự thật** về "đơn này đã được trả bao nhiêu", và có **hai bên cùng ghi**: trợ lý (`basis: policy`) và CSKH hoàn tay qua tổng đài (`basis: manual`, `T-CSKH-2520` 20.000đ cho `O-2520`, `T-CSKH-2521` 10.000đ cho `O-2521`) | Không đọc sổ cái trước khi hoàn → hoàn lần hai, lần ba (`S5-02`, `S5-03`, `S5-05`, `S5-20`), kèm một lỗi hãng mới mỗi lần: 890.000đ hoàn sai, 20 lỗi hãng oan ở mốc prepared |
+| `orders[].refund_status` | **Bản sao** của sổ cái (B3) | Bản sao **không được cập nhật**: `O-2520`, `O-2521` đã có dòng CSKH hoàn tay trong sổ cái nhưng `refund_status` vẫn là `NONE` | Cổng nào dựa vào `refund_status` để chặn hoàn trùng sẽ vẫn để lọt; phải cộng trực tiếp các dòng sổ cái theo `order_id` (cổng 4 của HOÀNG làm đúng như vậy) |
+| `orders[].warehouse_id` và `goods_value_vnd` | **Chưa hỏi** (chỉ dùng để tách phân khúc trong report); B3 nhắc kho HCM-B2B "từ 2 triệu" nhưng không nối với hạn mức | `warehouse_id` quyết định ticket **có tự động được hay không**: đơn sỉ HCM-B2B (2,2–2,35 triệu) có quyền lợi vượt `auto_limit_vnd` 200.000đ (`S5-51`: đề xuất 230.000đ) nên **luôn** chuyển người sau khi máy đã đọc | Tiền: kho HCM-B2B tốn 10.382đ/ticket > làm tay 10.000đ (tiền máy + công duyệt). Không ảnh hưởng lỗi hãng |
+| Chữ khách viết trong ticket (`text`), độ dài | **Bản sao** lời khách, chỉ lo về nội dung (B2 `T-002@55`), chưa hỏi về độ dài | Độ dài là **đầu vào của tiền máy**: `ops_facts.llm_cost.extract_per_4_chars_vnd` = 1đ/4 ký tự; khách dán cả danh sách hàng (`S5-50` 5.227 ký tự, `S5-70` 5.473 ký tự) | Tiền LLM 1.856–2.412đ/ticket > trần 1.500đ ở base; cổng `cost_budget_per_ticket_vnd` = 1.200đ chặn được, nhưng đổi lại ticket đó tốn 10.000đ công duyệt |
 
 ---
 
@@ -256,15 +258,15 @@ Bắt buộc: ít nhất ba dòng, trong đó **một dòng là nhánh bàn chư
 
 ### Câu 3.2 · Một specification mà nếu bị vi phạm thì gây ra tác hại trên thẻ
 
-Kiểm được bằng code hoặc bằng một con số trong report: …
+Kiểm được bằng code hoặc bằng một con số trong report: **Với mọi đơn, tổng tiền đã hoàn trong sổ cái (mọi dòng cùng `order_id`, gồm cả khoản CSKH hoàn tay `basis: manual`) cộng khoản sắp hoàn không được vượt quyền lợi của đơn theo chính sách hiệu lực; và mỗi kiện (`parcel_id`) bị ghi lỗi hãng nhiều nhất một lần.** Vi phạm spec này chính là "đơn hoàn hai, ba lần" trong email CFO: tiền mất thật và hãng bị phạt trùng. Spec cho phép bù phần còn thiếu (`S5-21`: đã hoàn tay 10.000đ, vẫn được hoàn nốt), không cấm khách nhắn lại.
 
-Kiểm bằng gì (hàm trong `guards.py`, dòng report nào): …
+Kiểm bằng gì (hàm trong `guards.py`, dòng report nào): trước lệnh ghi: `write_gate` cổng 4 (cộng `ctx.tools.ledger_rows(order_id=...)`, vượt quyền lợi thì chuyển người) và cổng 2 (cần thêm kiểm `fault_rows(parcel_id=...)` đã có lỗi chưa); sau khi chạy: report `--suite S5` phải có `wrongful_refund_vnd` = 0 và `wrongful_carrier_faults` = 0, `merchant_debit_vnd` = 0; theo dõi production bằng chỉ số `duplicate_refund_rate` trong `lab10/monitors.py` (phải bằng 0).
 
 ### Câu 3.3 · Một giả định về môi trường mà người thiết kế đã ngầm tin, nhưng nhiều khả năng sai ngoài thực tế
 
-Giả định (thứ nằm NGOÀI phần mềm): …
+Giả định (thứ nằm NGOÀI phần mềm): **Mỗi yêu cầu hoàn tiền tới đúng một lần, qua đúng một kênh, và chỉ trợ lý ghi vào sổ cái hoàn tiền.**
 
-Vì sao có thể sai: …
+Vì sao có thể sai: khách chưa thấy trả lời thì nhắn lại, đổi cách viết, hoặc gọi tổng đài (`S5-02`, `S5-03`, `S5-05`, `S5-20`: "tôi nhắn lại", "hôm qua gọi tổng đài"); CSKH vẫn hoàn tay song song trong pilot (`T-CSKH-2520`, `T-CSKH-2521`), và sổ của CSKH không cập nhật `refund_status` của đơn. Ngoài đời còn thêm shop hoàn trực tiếp cho khách và lần nhắn lại dồn vào giờ cao điểm. Một giả định thứ hai cũng sai ở thẻ này: "mọi đơn trong pilot là đơn lẻ giá trị nhỏ", trong khi kho sỉ HCM-B2B có đơn từ 2 triệu, luôn vượt hạn mức tự động.
 
 ---
 
