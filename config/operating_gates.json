@@ -3,14 +3,14 @@
   "business": {
     "daily_refund_cap_vnd": 800000,
     "cost_budget_per_ticket_vnd": 1200,
-    "pilot_scope": {"mode": "all", "warehouses": [], "percent": 100},
+    "pilot_scope": {"mode": "warehouse", "warehouses": ["HN", "HCM", "DN", "CT"], "percent": 100},
     "roi_min": 0.5
   },
   "operations": {
     "pic": "NV-TUNG",
     "approver_id": "NV-HANH",
-    "reviewers_on_shift": 2,
-    "review_capacity_per_hour": 12,
+    "reviewers_on_shift": 1,
+    "review_capacity_per_hour": 6,
     "max_queue_wait_minutes": 60,
     "stop_conditions": [
       "Dừng tự động nhận ca chuyển người nếu queue_wait_max_min đạt 60 phút hoặc queue_stuck lớn hơn 0; giữ ticket cho CSKH xử lý thủ công.",

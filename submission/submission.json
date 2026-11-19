@@ -9,8 +9,8 @@
   "decision_v1": "Tiếp tục",
   "decision_v2": "Thu hẹp",
   "three_lines": {
-    "environment_assumption": "Thiết kế giả định mọi khoản hoàn tay từ CSKH được ghi kịp thời vào cùng ledger theo order_id.",
-    "reduce_or_prevent": "Gate chặn hoàn trùng và lỗi hãng oan khi ledger đầy đủ; ledger thiếu hoặc ngoài hệ thống thì chỉ giảm rủi ro.",
-    "measure_in_pilot": "Đo hoàn trùng, lỗi hãng oan, chi phí và ROI theo kho trên giao dịch thật, đối chiếu sổ CSKH hằng ngày."
+    "environment_assumption": "Mọi khoản hoàn cho một đơn, kể cả khoản CSKH hoàn tay qua tổng đài, đều được ghi ngay vào sổ cái mà cổng hoàn tích lũy đọc; ngoài đời CSKH có thể ghi sổ chậm hoặc quên ghi, và khách sẽ nhắn lại nhiều lần qua nhiều kênh, nên trợ lý vẫn có thể hoàn trùng.",
+    "reduce_or_prevent": "Cổng hoàn tích lũy NGĂN hoàn trùng và lỗi hãng trùng khi sổ cái đầy đủ, vì nó chặn ngay trước lệnh issue_refund bằng tổng tiền thật trong sổ; nhưng với cả hệ thống nó chỉ GIẢM khả năng, vì phụ thuộc CSKH ghi sổ đúng lúc; phần chi phí (cắt kho sỉ HCM-B2B, rút gọn ticket dài, 1 người trực) cũng chỉ GIẢM, vì lượng ticket hay tỉ lệ đơn sỉ tăng là chi phí lại vượt, và hai chỉ số theo dõi mới chỉ phát hiện, không chặn.",
+    "measure_in_pilot": "Chi phí mỗi ticket theo từng kho với tiền LLM và công duyệt thật, tỉ lệ khách nhắn lại hoặc gọi tổng đài cho cùng một đơn cùng độ trễ ghi sổ của CSKH, tỉ lệ ca hợp lệ bị hiểu sai do rút gọn ticket dài, và hàng chờ của 1 người trực trong giờ cao điểm."
   }
 }
