@@ -312,10 +312,10 @@ Mỗi con số kèm một câu lý do, lấy từ `data/world.json` → `ops_lim
 
 | Khoá | Giá trị bàn đặt | Lý do (một câu, có số) |
 |---|---|---|
-| `business.daily_refund_cap_vnd` | | |
-| `business.cost_budget_per_ticket_vnd` | | |
-| `business.pilot_scope` (all / warehouse / percent) | | |
-| `business.roi_min` | | |
+| `business.daily_refund_cap_vnd` | `800000` | Bằng 40% ngân sách hoàn tự động của Finance (`ops_limits.daily_auto_refund_budget_vnd` = 2.000.000đ) và gấp khoảng 5 lần ngày hoàn nhiều nhất ở base (155.000đ, `R-base-before-20261119-151835-bde05c`): không chặn ngày bình thường, nhưng một ngày hoàn dồn dập (lỗi lặp, ticket giả hàng loạt) bị dừng ở dưới một nửa ngân sách, phần vượt chuyển cho NV-HANH duyệt. |
+| `business.cost_budget_per_ticket_vnd` | `1200` | Thấp hơn trần tiền LLM 1.500đ/ticket đã thống nhất (`ops_limits.max_llm_cost_per_ticket_vnd`) 20% để chừa biên; ticket tốn nhất ở bộ nền là 670đ (cộng 100đ nếu bật ghi chú giải thích, `ops_facts.llm_cost.decision_note_vnd`), nên ticket bình thường không bị chặn, chỉ ticket dài bất thường (khoảng trên 1.800 ký tự, nhồi chữ) bị chuyển người thay vì cho máy đọc. |
+| `business.pilot_scope` (all / warehouse / percent) | `{"mode": "all"}` (cả 5 kho, độ phủ 1.0) | Thử trước khi chốt (bản sao, cùng cổng vòng 1 và cùng trần ở trên): **all** → chi phí 4.293đ/ticket, ROI 1,33, chuyển người 0,2364; **HN + HCM** → độ phủ 0,59, chi phí 5.319đ, ROI 0,88, chuyển người 0,2462 (sát ngưỡng 0,25); **HN + CT** → độ phủ 0,55, chi phí 4.723đ, ROI 1,12. Thu hẹp làm phí giữ chỗ người trực (`ops_facts.reviewer_standby_fee_vnd` 30.000đ/ca) chia cho ít ticket hơn, tiết kiệm ròng giảm một nửa, mà không kho nào tốn hơn làm tay 10.000đ (`manual_cost_per_ticket_vnd`). Nên vòng 1 giữ cả 5 kho; phạm vi là đòn bẩy dành cho vòng 2 nếu thẻ sự cố chỉ ra một kho hoặc hãng có vấn đề. |
+| `business.roi_min` | `0.5` | Khớp ngưỡng `roi_min` đã ký trong `config/acceptance_criteria.json`: ở trần chi phí 6.000đ/ticket so với làm tay 10.000đ, ROI không hoàn sai là 0,67; 0,5 chừa biên cho thiệt hại nhỏ nhưng vẫn đòi mỗi 1đ bỏ ra tiết kiệm ròng ít nhất 0,5đ. Base đang 1,34. |
 
 ### B7.5 · Câu 2.10 · Cổng con người, vận hành, pháp lý + Runbook phần 1–3
 
